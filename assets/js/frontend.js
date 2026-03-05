@@ -60,10 +60,71 @@
 			this.lastRenderTime = 0;
 			this.renderTimeout = null;
 
-			this.init();
+			// プライベートモード対応：初期化フラグと監視機能
+			this.initialized = false;
+			this.resizeObserver = null;
+
+			// ResizeObserver でラッパーのサイズ決定を監視
+			this.waitForWrapperReady();
+		}
+
+		waitForWrapperReady() {
+			// プライベートモード対応：ラッパーのサイズが決定されるまで待つ
+			const getWrapperWidth = () => {
+				return this.$wrapper[0]?.offsetWidth || this.$wrapper.width() || 0;
+			};
+
+			const wrapperWidth = getWrapperWidth();
+			console.log('waitForWrapperReady - ラッパー幅チェック:', {
+				offsetWidth: this.$wrapper[0]?.offsetWidth,
+				jQueryWidth: this.$wrapper.width(),
+				calculated: wrapperWidth
+			});
+
+			if (wrapperWidth > 0 && !this.initialized) {
+				// ラッパーのサイズが決定されたので初期化可能
+				console.log('waitForWrapperReady - サイズ決定. 初期化を開始します');
+				this.init();
+				this.cleanupObserver();
+			} else if (!this.initialized) {
+				// ResizeObserver を使ってラッパーの後続のサイズ変更を監視
+				if (!this.resizeObserver && typeof ResizeObserver !== 'undefined') {
+					this.resizeObserver = new ResizeObserver(() => {
+						const currentWidth = getWrapperWidth();
+						if (currentWidth > 0 && !this.initialized) {
+							console.log('ResizeObserver - ラッパー幅が確定:', currentWidth);
+							this.init();
+							this.cleanupObserver();
+						}
+					});
+					this.resizeObserver.observe(this.$wrapper[0]);
+				} else {
+					// ResizeObserver 非対応の場合はタイムアウト後に初期化
+					setTimeout(() => {
+						if (!this.initialized) {
+							console.log('Timeout fallback - 初期化を強制開始');
+							this.init();
+						}
+					}, 500);
+				}
+			}
+		}
+
+		cleanupObserver() {
+			if (this.resizeObserver) {
+				this.resizeObserver.disconnect();
+				this.resizeObserver = null;
+			}
 		}
 
 		init() {
+			if (this.initialized) {
+				console.log('既に初期化済みです');
+				return;
+			}
+
+			this.initialized = true;
+
 			console.log('マットレスサイズシミュレーターを初期化中');
 			console.log('商品:', this.products);
 			console.log('SVG URL:', this.svgUrls);
@@ -76,10 +137,11 @@
 				maleShoulderRatio: this.maleShoulderRatio
 			});
 
-			// キャンバス幅を親要素から取得（より確実）
-			const wrapperWidth = this.$wrapper.width();
+			// キャンバス幅を親要素から取得（offsetWidth を優先）
+			const wrapperWidth = this.$wrapper[0]?.offsetWidth || this.$wrapper.width() || 0;
 			console.log('ラッパー幅:', {
-				wrapperWidth: wrapperWidth,
+				offsetWidth: this.$wrapper[0]?.offsetWidth,
+				jQueryWidth: this.$wrapper.width(),
 				maxCanvasWidth: this.maxCanvasWidth,
 				jQueryCanvasWidth: this.$canvas.width()
 			});
@@ -188,11 +250,11 @@
 				return;
 			}
 
-			// 親要素（ラッパー）の実際のサイズを取得（最優先）
-			let canvasWidth = this.$wrapper.width() || this.$canvas.width() || 0;
-			let canvasHeight = this.$canvas.height() || 0;
+			// 幅取得の優先順位：offsetWidth > jQuery.width() > getBoundingClientRect() > fallback
+			let canvasWidth = this.$wrapper[0]?.offsetWidth || this.$wrapper.width() || 0;
+			let canvasHeight = this.$canvas[0]?.offsetHeight || this.$canvas.height() || 0;
 
-			// フォールバック：getBoundingClientRect で正確な寸法を取得
+			// フォールバック1：getBoundingClientRect で正確な寸法を取得
 			if (!canvasWidth || canvasWidth <= 0) {
 				const wrapperRect = this.$wrapper[0]?.getBoundingClientRect();
 				if (wrapperRect && wrapperRect.width > 0) {
@@ -222,9 +284,10 @@
 			console.log('Canvas dimensions for scaling:', {
 				canvasWidth: canvasWidth,
 				canvasHeight: canvasHeight,
-				wrapperWidth: this.$wrapper.width(),
-				jQueryCanvasWidth: this.$canvas.width(),
-				jQueryCanvasHeight: this.$canvas.height()
+				wrapperOffsetWidth: this.$wrapper[0]?.offsetWidth,
+				wrapperJQueryWidth: this.$wrapper.width(),
+				canvasOffsetHeight: this.$canvas[0]?.offsetHeight,
+				canvasJQueryHeight: this.$canvas.height()
 			});
 
 			// Use initial product as reference for base scale
