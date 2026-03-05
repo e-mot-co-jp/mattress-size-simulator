@@ -76,6 +76,14 @@
 				maleShoulderRatio: this.maleShoulderRatio
 			});
 
+			// キャンバス幅を親要素から取得（より確実）
+			const wrapperWidth = this.$wrapper.width();
+			console.log('ラッパー幅:', {
+				wrapperWidth: wrapperWidth,
+				maxCanvasWidth: this.maxCanvasWidth,
+				jQueryCanvasWidth: this.$canvas.width()
+			});
+
 			// Check if we have products
 			if (!this.products || this.products.length === 0) {
 				console.error('薬を設定していません');
@@ -180,25 +188,43 @@
 				return;
 			}
 
-			// Use canvas dimensions
-			let canvasWidth = this.$canvas.width() || this.maxCanvasWidth;
-			let canvasHeight = this.$canvas.height() || this.minHeight;
+			// 親要素（ラッパー）の実際のサイズを取得（最優先）
+			let canvasWidth = this.$wrapper.width() || this.$canvas.width() || 0;
+			let canvasHeight = this.$canvas.height() || 0;
+
+			// フォールバック：getBoundingClientRect で正確な寸法を取得
+			if (!canvasWidth || canvasWidth <= 0) {
+				const wrapperRect = this.$wrapper[0]?.getBoundingClientRect();
+				if (wrapperRect && wrapperRect.width > 0) {
+					canvasWidth = wrapperRect.width;
+					console.log('getBoundingClientRect からラッパー幅を取得:', canvasWidth);
+				}
+			}
+
+			if (!canvasHeight || canvasHeight <= 0) {
+				const canvasRect = this.$canvas[0]?.getBoundingClientRect();
+				if (canvasRect && canvasRect.height > 0) {
+					canvasHeight = canvasRect.height;
+					console.log('getBoundingClientRect からキャンバス高さを取得:', canvasHeight);
+				}
+			}
 
 			// キャンバス寸法の正当性確認（負の値やゼロは不正）
 			if (!canvasWidth || canvasWidth <= 0) {
-				console.warn('Canvas width is invalid:', canvasWidth, 'using default:', this.maxCanvasWidth);
+				console.warn('Canvas width is invalid:', canvasWidth, 'using maxCanvasWidth:', this.maxCanvasWidth);
 				canvasWidth = this.maxCanvasWidth;
 			}
 			if (!canvasHeight || canvasHeight <= 0) {
-				console.warn('Canvas height is invalid:', canvasHeight, 'using default:', this.minHeight);
+				console.warn('Canvas height is invalid:', canvasHeight, 'using minHeight:', this.minHeight);
 				canvasHeight = this.minHeight;
 			}
 
 			console.log('Canvas dimensions for scaling:', {
 				canvasWidth: canvasWidth,
 				canvasHeight: canvasHeight,
-				originalWidth: this.$canvas.width(),
-				originalHeight: this.$canvas.height()
+				wrapperWidth: this.$wrapper.width(),
+				jQueryCanvasWidth: this.$canvas.width(),
+				jQueryCanvasHeight: this.$canvas.height()
 			});
 
 			// Use initial product as reference for base scale
@@ -351,8 +377,17 @@
 			}
 
 			// Update canvas dimensions with validation
-			this.canvasWidth = this.$canvas.width();
-			this.canvasHeight = this.$canvas.height();
+			// 親要素の幅を最優先で使用
+			this.canvasWidth = this.$wrapper.width() || this.$canvas.width() || this.maxCanvasWidth;
+			this.canvasHeight = this.$canvas.height() || this.minHeight;
+
+			// getBoundingClientRect での正確な寸法取得（フォールバック）
+			if (!this.canvasWidth || this.canvasWidth <= 0) {
+				const wrapperRect = this.$wrapper[0]?.getBoundingClientRect();
+				if (wrapperRect && wrapperRect.width > 0) {
+					this.canvasWidth = wrapperRect.width;
+				}
+			}
 
 			// キャンバス寸法の正当性確認（負の値やゼロは不正）
 			if (!this.canvasWidth || this.canvasWidth <= 0) {
@@ -370,7 +405,7 @@
 			console.log('Rendering:', {
 				canvasWidth: this.canvasWidth,
 				canvasHeight: this.canvasHeight,
-				product: this.currentProduct,
+				product: this.currentProduct.product_name,
 				baseScale: this.baseScale,
 				height: this.currentHeight,
 				shoulderWidth: this.currentShoulderWidth
