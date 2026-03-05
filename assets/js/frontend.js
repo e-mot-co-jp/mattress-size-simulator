@@ -19,15 +19,24 @@
 			this.svgCache = {};
 			this.isRendering = false;
 
+			// Load widget configuration from data attribute
+			const configJson = this.$wrapper.attr('data-widget-config');
+			let config = {};
+			try {
+				config = configJson ? JSON.parse(configJson) : {};
+			} catch (e) {
+				console.error('Error parsing widget config:', e);
+			}
+
 			// SVG URLs
-			this.svgUrls = window.mattressSizeSimulatorData ? window.mattressSizeSimulatorData.svgUrls : {};
-			this.products = window.mattressSizeSimulatorData ? window.mattressSizeSimulatorData.products : [];
+			this.svgUrls = config.svgUrls || {};
+			this.products = config.products || [];
 
 			// Canvas dimensions
 			this.canvasWidth = this.$canvas.width();
 			this.canvasHeight = this.$canvas.height();
-			this.maxCanvasWidth = window.mattressSizeSimulatorData ? window.mattressSizeSimulatorData.maxCanvasWidth : 600;
-			this.minHeight = window.mattressSizeSimulatorData ? window.mattressSizeSimulatorData.minHeight : 400;
+			this.maxCanvasWidth = config.maxCanvasWidth || 600;
+			this.minHeight = config.minHeight || 400;
 
 			// Current state
 			this.currentProduct = null;
@@ -47,8 +56,24 @@
 		}
 
 		init() {
+			console.log('Initializing Mattress Size Simulator');
+			console.log('Products:', this.products);
+			console.log('SVG URLs:', this.svgUrls);
+
+			// Check if we have products
+			if (!this.products || this.products.length === 0) {
+				console.error('No products configured');
+				this.$canvas.html('<div style="padding: 20px; text-align: center; color: #d32f2f;">No mattress products configured. Please add products in the widget settings.</div>');
+				return;
+			}
+
 			// Load initial product
 			this.loadProduct();
+
+			if (!this.currentProduct) {
+				console.error('Failed to load initial product');
+				return;
+			}
 
 			// Bind events
 			this.$productSelect.on('change', () => this.onProductChange());
@@ -76,11 +101,16 @@
 		loadProduct() {
 			const selectedOption = this.$productSelect.find('option:selected');
 			const productJson = selectedOption.val();
+			console.log('Loading product:', productJson);
 			try {
 				this.currentProduct = JSON.parse(productJson);
+				console.log('Product loaded:', this.currentProduct);
 			} catch (e) {
 				console.error('Error parsing product JSON:', e);
-				this.currentProduct = this.products[0];
+				if (this.products && this.products.length > 0) {
+					this.currentProduct = this.products[0];
+					console.log('Using first product as fallback:', this.currentProduct);
+				}
 			}
 		}
 
@@ -228,6 +258,31 @@
 			// Clear canvas
 			this.$canvas.empty();
 
+			if (!this.currentProduct) {
+				console.error('No current product selected');
+				return;
+			}
+
+			// Update canvas dimensions
+			this.canvasWidth = this.$canvas.width();
+			if (this.canvasWidth === 0) {
+				this.canvasWidth = this.maxCanvasWidth;
+				this.$canvas.width(this.canvasWidth);
+			}
+
+			// Set canvas height if not set
+			if (this.$canvas.height() < this.minHeight) {
+				this.$canvas.height(this.minHeight);
+			}
+			this.canvasHeight = this.$canvas.height();
+
+			console.log('Rendering:', {
+				canvasWidth: this.canvasWidth,
+				canvasHeight: this.canvasHeight,
+				product: this.currentProduct,
+				svgUrls: this.svgUrls
+			});
+
 			// Calculate mattress dimensions based on canvas width and aspect ratio
 			const mattressAspectRatio = this.currentProduct.mattress_width / this.currentProduct.mattress_length;
 			const maxMattressWidth = this.canvasWidth * 0.9; // 90% of canvas width
@@ -261,13 +316,17 @@
 		loadAndRenderMattress(width, height, x, y) {
 			const svgUrl = this.currentProduct.mattress_shape === 'mummy' ? this.svgUrls.mummy : this.svgUrls.square;
 
+			console.log('Loading mattress SVG:', svgUrl);
+
 			if (!svgUrl) {
-				console.warn('Mattress SVG URL not set');
+				console.warn('Mattress SVG URL not set, rendering placeholder');
+				this.renderMattressPlaceholder(width, height, x, y);
 				return;
 			}
 
 			// Check cache first
 			if (this.svgCache[svgUrl]) {
+				console.log('Using cached mattress SVG');
 				this.placeSvgInCanvas(this.svgCache[svgUrl].clone(), width, height, x, y, 'mattress');
 				return;
 			}
@@ -275,23 +334,26 @@
 			$.ajax({
 				url: svgUrl,
 				type: 'GET',
-				dataType: 'html',
+				dataType: 'text',
 				success: (svgContent) => {
-					const $svg = $(svgContent).find('svg');
+					console.log('Mattress SVG loaded successfully');
+					const $svg = $(svgContent).filter('svg').add($(svgContent).find('svg'));
 
 					if ($svg.length === 0) {
+						console.warn('No SVG element found, creating wrapper');
 						// If no SVG found, try wrapping the content as SVG
-						const $svgWrapper = $('<svg></svg>');
+						const $svgWrapper = $('<svg xmlns="http://www.w3.org/2000/svg"></svg>');
 						$svgWrapper.html(svgContent);
 						this.svgCache[svgUrl] = $svgWrapper.clone();
 						this.placeSvgInCanvas($svgWrapper, width, height, x, y, 'mattress');
 					} else {
+						console.log('SVG element found, caching and rendering');
 						this.svgCache[svgUrl] = $svg.eq(0).clone();
 						this.placeSvgInCanvas($svg.eq(0).clone(), width, height, x, y, 'mattress');
 					}
 				},
-				error: () => {
-					console.error('Failed to load mattress SVG:', svgUrl);
+				error: (xhr, status, error) => {
+					console.error('Failed to load mattress SVG:', {url: svgUrl, status, error});
 					// Render placeholder
 					this.renderMattressPlaceholder(width, height, x, y);
 				}
@@ -301,13 +363,17 @@
 		loadAndRenderSilhouette(width, height, x, y) {
 			const svgUrl = this.currentGender === 'female' ? this.svgUrls.female : this.svgUrls.male;
 
+			console.log('Loading silhouette SVG:', svgUrl);
+
 			if (!svgUrl) {
-				console.warn('Silhouette SVG URL not set');
+				console.warn('Silhouette SVG URL not set, rendering placeholder');
+				this.renderSilhouettePlaceholder(width, height, x, y);
 				return;
 			}
 
 			// Check cache first
 			if (this.svgCache[svgUrl]) {
+				console.log('Using cached silhouette SVG');
 				this.placeSvgInCanvas(this.svgCache[svgUrl].clone(), width, height, x, y, 'silhouette');
 				return;
 			}
@@ -315,23 +381,26 @@
 			$.ajax({
 				url: svgUrl,
 				type: 'GET',
-				dataType: 'html',
+				dataType: 'text',
 				success: (svgContent) => {
-					const $svg = $(svgContent).find('svg');
+					console.log('Silhouette SVG loaded successfully');
+					const $svg = $(svgContent).filter('svg').add($(svgContent).find('svg'));
 
 					if ($svg.length === 0) {
-						const $svgWrapper = $('<svg></svg>');
+						console.warn('No SVG element found, creating wrapper');
+						const $svgWrapper = $('<svg xmlns="http://www.w3.org/2000/svg"></svg>');
 						$svgWrapper.html(svgContent);
 						this.svgCache[svgUrl] = $svgWrapper.clone();
 						this.placeSvgInCanvas($svgWrapper, width, height, x, y, 'silhouette');
 					} else {
+						console.log('SVG element found, caching and rendering');
 						const $clonedSvg = $svg.eq(0).clone();
 						this.svgCache[svgUrl] = $clonedSvg.clone();
 						this.placeSvgInCanvas($clonedSvg, width, height, x, y, 'silhouette');
 					}
 				},
-				error: () => {
-					console.error('Failed to load silhouette SVG:', svgUrl);
+				error: (xhr, status, error) => {
+					console.error('Failed to load silhouette SVG:', {url: svgUrl, status, error});
 					// Render placeholder
 					this.renderSilhouettePlaceholder(width, height, x, y);
 				}
@@ -339,7 +408,12 @@
 		}
 
 		placeSvgInCanvas($svg, width, height, x, y, type) {
+			console.log('Placing SVG in canvas:', {width, height, x, y, type});
+
 			const $clonedSvg = $svg.clone();
+
+			// Remove any existing width/height attributes to allow CSS sizing
+			$clonedSvg.removeAttr('width').removeAttr('height');
 
 			// Set positioning and dimensions
 			$clonedSvg.css({
@@ -353,68 +427,116 @@
 
 			$clonedSvg.attr({
 				'data-type': type,
-				'preserveAspectRatio': 'xMidYMid meet'
+				'preserveAspectRatio': 'xMidYMid meet',
+				'viewBox': $clonedSvg.attr('viewBox') || '0 0 100 100'
 			});
 
 			// Add cursor for silhouette
 			if (type === 'silhouette') {
 				$clonedSvg.css('cursor', 'grab');
 				this.silhouetteSvgElement = $clonedSvg[0];
+			} else {
+				this.mattressSvgElement = $clonedSvg[0];
 			}
 
 			this.$canvas.append($clonedSvg);
+			console.log('SVG appended to canvas');
 		}
 
 		renderMattressPlaceholder(width, height, x, y) {
-			const $rect = $('<svg><rect/></svg>')
-				.css({
-					position: 'absolute',
-					left: x + 'px',
-					top: y + 'px',
-					width: width + 'px',
-					height: height + 'px'
-				})
-				.attr('data-type', 'mattress');
-
-			$rect.find('rect').attr({
+			console.log('Rendering mattress placeholder');
+			const $svg = $('<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+			$svg.attr({
 				width: width,
 				height: height,
+				viewBox: `0 0 ${width} ${height}`
+			});
+
+			const $rect = $('<rect/>');
+			$rect.attr({
+				width: width,
+				height: height,
+				x: 0,
+				y: 0,
 				fill: '#e0e0e0',
 				stroke: '#999',
 				'stroke-width': 2
 			});
 
-			this.$canvas.append($rect);
+			const $text = $('<text/>');
+			$text.attr({
+				x: width / 2,
+				y: height / 2,
+				'text-anchor': 'middle',
+				'dominant-baseline': 'middle',
+				fill: '#666',
+				'font-size': '14px'
+			}).text('Mattress SVG');
+
+			$svg.append($rect).append($text);
+
+			$svg.css({
+				position: 'absolute',
+				left: x + 'px',
+				top: y + 'px'
+			}).attr('data-type', 'mattress');
+
+			this.mattressSvgElement = $svg[0];
+			this.$canvas.append($svg);
 		}
 
 		renderSilhouettePlaceholder(width, height, x, y) {
-			const $rect = $('<svg><rect/></svg>')
-				.css({
-					position: 'absolute',
-					left: x + 'px',
-					top: y + 'px',
-					width: width + 'px',
-					height: height + 'px',
-					cursor: 'grab'
-				})
-				.attr('data-type', 'silhouette');
-
-			$rect.find('rect').attr({
+			console.log('Rendering silhouette placeholder');
+			const $svg = $('<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+			$svg.attr({
 				width: width,
 				height: height,
+				viewBox: `0 0 ${width} ${height}`
+			});
+
+			const $rect = $('<rect/>');
+			$rect.attr({
+				width: width,
+				height: height,
+				x: 0,
+				y: 0,
 				fill: '#ffcc99',
 				stroke: '#ff9900',
 				'stroke-width': 2
 			});
 
-			this.silhouetteSvgElement = $rect[0];
-			this.$canvas.append($rect);
+			const $text = $('<text/>');
+			$text.attr({
+				x: width / 2,
+				y: height / 2,
+				'text-anchor': 'middle',
+				'dominant-baseline': 'middle',
+				fill: '#666',
+				'font-size': '14px'
+			}).text('Silhouette');
+
+			$svg.append($rect).append($text);
+
+			$svg.css({
+				position: 'absolute',
+				left: x + 'px',
+				top: y + 'px',
+				cursor: 'grab'
+			}).attr('data-type', 'silhouette');
+
+			this.silhouetteSvgElement = $svg[0];
+			this.$canvas.append($svg);
 		}
 	}
 
 	// Initialize on document ready
 	$(document).ready(function() {
-		$('.mss-wrapper').each(function() {
+		console.log('Mattress Size Simulator: Document ready');
+		const $wrappers = $('.mss-wrapper');
+		console.log('Found widget wrappers:', $wrappers.length);
+
+		$wrappers.each(function(index) {
+			console.log('Initializing widget', index);
 			new MattressSizeSimulator($(this));
 		});
 	});

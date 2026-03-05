@@ -340,24 +340,22 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$female_svg_url   = ! empty( $settings['female_silhouette_svg']['url'] ) ? $settings['female_silhouette_svg']['url'] : '';
 		$male_svg_url     = ! empty( $settings['male_silhouette_svg']['url'] ) ? $settings['male_silhouette_svg']['url'] : '';
 
-		wp_localize_script(
-			'mattress-size-simulator-frontend',
-			'mattressSizeSimulatorData',
-			[
-				'products'        => $products,
-				'svgUrls'         => [
-					'mummy'  => $mummy_svg_url,
-					'square' => $square_svg_url,
-					'female' => $female_svg_url,
-					'male'   => $male_svg_url,
-				],
-				'maxCanvasWidth'  => $max_canvas_width,
-				'minHeight'       => $min_height,
-			]
-		);
+		$widget_data = [
+			'products'        => $products,
+			'svgUrls'         => [
+				'mummy'  => $mummy_svg_url,
+				'square' => $square_svg_url,
+				'female' => $female_svg_url,
+				'male'   => $male_svg_url,
+			],
+			'maxCanvasWidth'  => $max_canvas_width,
+			'minHeight'       => $min_height,
+		];
 
 		?>
-		<div class="mss-wrapper" style="max-width: <?php echo esc_attr( $max_canvas_width ); ?>px;">
+		<div class="mss-wrapper" 
+		     style="max-width: <?php echo esc_attr( $max_canvas_width ); ?>px;"
+		     data-widget-config="<?php echo esc_attr( wp_json_encode( $widget_data ) ); ?>">
 			<!-- Input Controls -->
 			<div class="mss-controls">
 				<div class="mss-control-group">

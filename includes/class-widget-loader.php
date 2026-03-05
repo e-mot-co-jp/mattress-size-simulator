@@ -19,7 +19,7 @@ class Mattress_Size_Simulator_Widget_Loader {
 	 */
 	public function __construct() {
 		add_action( 'elementor/widgets/register', [ $this, 'register_widgets' ] );
-		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_frontend_scripts' ] );
+		add_action( 'elementor/frontend/after_enqueue_scripts', [ $this, 'enqueue_frontend_scripts' ] );
 	}
 
 	/**
@@ -36,11 +36,6 @@ class Mattress_Size_Simulator_Widget_Loader {
 	 * Enqueue frontend scripts and styles
 	 */
 	public function enqueue_frontend_scripts() {
-		// Only enqueue on pages that use the widget
-		if ( ! $this->has_widget_on_page() ) {
-			return;
-		}
-
 		wp_enqueue_style(
 			'mattress-size-simulator-style',
 			MATTRESS_SIZE_SIMULATOR_URL . 'assets/css/frontend.css',
@@ -55,34 +50,5 @@ class Mattress_Size_Simulator_Widget_Loader {
 			MATTRESS_SIZE_SIMULATOR_VERSION,
 			true
 		);
-
-		wp_localize_script(
-			'mattress-size-simulator-frontend',
-			'mattressSizeSimulatorConfig',
-			[
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-			]
-		);
-	}
-
-	/**
-	 * Check if the widget is used on the current page
-	 *
-	 * @return bool
-	 */
-	private function has_widget_on_page() {
-		global $post;
-
-		if ( ! isset( $post->ID ) ) {
-			return false;
-		}
-
-		if ( ! function_exists( 'has_blocks' ) || ! has_blocks( $post->ID ) ) {
-			return false;
-		}
-
-		$content = get_post_field( 'post_content', $post->ID );
-
-		return strpos( $content, 'mattress-simulator' ) !== false;
 	}
 }
