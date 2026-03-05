@@ -444,7 +444,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 
 			<!-- Instructions -->
 			<div class="mss-instructions">
-			<p><?php esc_html_e( 'キャンバス上の人体をドラッグしてマットレス上を移動一々。', 'mattress-size-simulator' ); ?></p>
+			<p><?php esc_html_e( 'キャンバス上の人体をドラッグしてマットレス上を移動できます。', 'mattress-size-simulator' ); ?></p>
 			</div>
 		</div>
 		<?php
