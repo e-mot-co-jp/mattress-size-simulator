@@ -181,8 +181,25 @@
 			}
 
 			// Use canvas dimensions
-			const canvasWidth = this.$canvas.width() || this.maxCanvasWidth;
-			const canvasHeight = this.$canvas.height() || this.minHeight;
+			let canvasWidth = this.$canvas.width() || this.maxCanvasWidth;
+			let canvasHeight = this.$canvas.height() || this.minHeight;
+
+			// キャンバス寸法の正当性確認（負の値やゼロは不正）
+			if (!canvasWidth || canvasWidth <= 0) {
+				console.warn('Canvas width is invalid:', canvasWidth, 'using default:', this.maxCanvasWidth);
+				canvasWidth = this.maxCanvasWidth;
+			}
+			if (!canvasHeight || canvasHeight <= 0) {
+				console.warn('Canvas height is invalid:', canvasHeight, 'using default:', this.minHeight);
+				canvasHeight = this.minHeight;
+			}
+
+			console.log('Canvas dimensions for scaling:', {
+				canvasWidth: canvasWidth,
+				canvasHeight: canvasHeight,
+				originalWidth: this.$canvas.width(),
+				originalHeight: this.$canvas.height()
+			});
 
 			// Use initial product as reference for base scale
 			const refWidthCm = parseFloat(this.currentProduct.mattress_width);
@@ -202,6 +219,12 @@
 			// Base scale = display size (px) / actual size (cm)
 			// Using length as the reference dimension
 			this.baseScale = displayHeight / refLengthCm;
+
+			// Ensure base scale is positive
+			if (this.baseScale <= 0) {
+				console.error('Calculated base scale is invalid:', this.baseScale, 'using fallback');
+				this.baseScale = 1; // Fallback to 1:1 scale
+			}
 
 			console.log('Base scale calculated:', {
 				baseScale: this.baseScale,
@@ -327,18 +350,22 @@
 				return;
 			}
 
-			// Update canvas dimensions
+			// Update canvas dimensions with validation
 			this.canvasWidth = this.$canvas.width();
-			if (this.canvasWidth === 0) {
+			this.canvasHeight = this.$canvas.height();
+
+			// キャンバス寸法の正当性確認（負の値やゼロは不正）
+			if (!this.canvasWidth || this.canvasWidth <= 0) {
+				console.warn('Canvas width is invalid:', this.canvasWidth, 'using max width:', this.maxCanvasWidth);
 				this.canvasWidth = this.maxCanvasWidth;
-				this.$canvas.width(this.canvasWidth);
+				this.$canvas.css('width', this.canvasWidth);
 			}
 
-			// Set canvas height if not set
-			if (this.$canvas.height() < this.minHeight) {
-				this.$canvas.height(this.minHeight);
+			if (!this.canvasHeight || this.canvasHeight <= 0) {
+				console.warn('Canvas height is invalid:', this.canvasHeight, 'using min height:', this.minHeight);
+				this.canvasHeight = this.minHeight;
+				this.$canvas.css('height', this.canvasHeight);
 			}
-			this.canvasHeight = this.$canvas.height();
 
 			console.log('Rendering:', {
 				canvasWidth: this.canvasWidth,
