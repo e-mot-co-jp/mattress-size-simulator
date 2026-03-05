@@ -283,18 +283,34 @@
 				svgUrls: this.svgUrls
 			});
 
-			// Calculate mattress dimensions based on canvas width and aspect ratio
-			const mattressAspectRatio = this.currentProduct.mattress_width / this.currentProduct.mattress_length;
-			const maxMattressWidth = this.canvasWidth * 0.9; // 90% of canvas width
+			// Calculate mattress dimensions based on actual cm measurements
+			// マットの実際のサイズ（cm単位）
+			const mattressWidthCm = parseFloat(this.currentProduct.mattress_width);
+			const mattressLengthCm = parseFloat(this.currentProduct.mattress_length);
+			const mattressAspectRatio = mattressWidthCm / mattressLengthCm;
 
-			let mattressWidth = maxMattressWidth;
-			let mattressHeight = mattressWidth / mattressAspectRatio;
+			console.log('Mattress size (cm):', {width: mattressWidthCm, length: mattressLengthCm});
 
-			// If mattress height exceeds canvas height, scale down
-			if (mattressHeight > this.canvasHeight * 0.7) {
-				mattressHeight = this.canvasHeight * 0.7;
+			// キャンバスの利用可能サイズの90%を最大とする
+			const maxMattressWidth = this.canvasWidth * 0.9;
+			const maxMattressHeight = this.canvasHeight * 0.7;
+
+			let mattressWidth, mattressHeight;
+
+			// 幅基準でスケールを計算
+			mattressWidth = maxMattressWidth;
+			mattressHeight = mattressWidth / mattressAspectRatio;
+
+			// 高さが超える場合は高さ基準でスケール
+			if (mattressHeight > maxMattressHeight) {
+				mattressHeight = maxMattressHeight;
 				mattressWidth = mattressHeight * mattressAspectRatio;
 			}
+
+			// スケール比率を計算（ピクセル/cm）
+			const scale = mattressHeight / mattressLengthCm; // 長さを基準にスケール計算
+
+			console.log('Scale:', scale, 'px/cm');
 
 			// Center the mattress horizontally and position it in the middle
 			const mattressX = (this.canvasWidth - mattressWidth) / 2;
@@ -303,14 +319,23 @@
 			// Load and render mattress SVG
 			this.loadAndRenderMattress(mattressWidth, mattressHeight, mattressX, mattressY);
 
-			// Calculate and render silhouette
-			const silhouetteHeight = this.canvasHeight * (this.currentHeight / 200); // Scale based on height
-			const silhouetteWidth = silhouetteHeight * (this.currentShoulderWidth / this.currentHeight); // Maintain proportions
+			// Calculate silhouette dimensions using the same scale
+			// シルエットのサイズをcm単位からピクセルに変換
+			const silhouetteHeightPx = this.currentHeight * scale; // 身長(cm) * スケール
+			const silhouetteWidthPx = this.currentShoulderWidth * scale; // 肩幅(cm) * スケール
 
-			const silhouetteX = mattressX + (mattressWidth - silhouetteWidth) / 2 + this.silhouetteOffsetX;
-			const silhouetteY = mattressY + (mattressHeight - silhouetteHeight) / 2 + this.silhouetteOffsetY;
+			console.log('Silhouette size:', {
+				heightCm: this.currentHeight,
+				widthCm: this.currentShoulderWidth,
+				heightPx: silhouetteHeightPx,
+				widthPx: silhouetteWidthPx
+			});
 
-			this.loadAndRenderSilhouette(silhouetteWidth, silhouetteHeight, silhouetteX, silhouetteY);
+			// シルエットの初期位置（中央配置 + オフセット）
+			const silhouetteX = mattressX + (mattressWidth - silhouetteWidthPx) / 2 + this.silhouetteOffsetX;
+			const silhouetteY = mattressY + (mattressHeight - silhouetteHeightPx) / 2 + this.silhouetteOffsetY;
+
+			this.loadAndRenderSilhouette(silhouetteWidthPx, silhouetteHeightPx, silhouetteX, silhouetteY);
 		}
 
 		loadAndRenderMattress(width, height, x, y) {
