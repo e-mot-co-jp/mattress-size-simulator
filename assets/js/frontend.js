@@ -192,7 +192,7 @@
 			// Handle window resize
 			$(window).on('resize', () => this.onWindowResize());
 
-			// Calculate base scale using initial product
+			// Calculate base scale based on silhouette (not product dependent)
 			this.calculateBaseScale();
 
 			// Initial render
@@ -312,11 +312,8 @@
 		}
 
 		calculateBaseScale() {
-			if (!this.currentProduct) {
-				console.error('Cannot calculate base scale without product');
-				return;
-			}
-
+			// シルエット基準でスケール計算（商品に依存しない）
+			
 			// 幅取得の優先順位：offsetWidth > jQuery.width() > getBoundingClientRect() > fallback
 			let canvasWidth = this.$wrapper[0]?.offsetWidth || this.$wrapper.width() || 0;
 			let canvasHeight = this.$canvas[0]?.offsetHeight || this.$canvas.height() || 0;
@@ -357,24 +354,17 @@
 				canvasJQueryHeight: this.$canvas.height()
 			});
 
-			// Use initial product as reference for base scale
-			const refWidthCm = parseFloat(this.currentProduct.mattress_width);
-			const refLengthCm = parseFloat(this.currentProduct.mattress_length);
-			const refAspectRatio = refWidthCm / refLengthCm;
+			// シルエットを基準にスケールを計算（初期身長171cm）
+			// 画像height : 身長部分 = 17 : 15 なので、画像heightは 171 * (17/15)
+			const heightRatio = 17 / 15;
+			const referenceHeight = 171; // 男性の初期身長（cm）
+			const referenceSilhouetteHeight = referenceHeight * heightRatio; // 実際の画像高さ（cm相当）
 
-			// Calculate max display size (90% width, 70% height)
-			const maxWidth = canvasWidth * 0.9;
-			const maxHeight = canvasHeight * 0.7;
+			// キャンバス高さの60%をシルエットの表示高さとして使用（余白確保）
+			const maxSilhouetteDisplayHeight = canvasHeight * 0.6;
 
-			// Calculate scale based on which dimension is limiting
-			let displayHeight = maxWidth / refAspectRatio;
-			if (displayHeight > maxHeight) {
-				displayHeight = maxHeight;
-			}
-
-			// Base scale = display size (px) / actual size (cm)
-			// Using length as the reference dimension
-			this.baseScale = displayHeight / refLengthCm;
+			// Base scale = 表示サイズ (px) / 実際のサイズ (cm)
+			this.baseScale = maxSilhouetteDisplayHeight / referenceSilhouetteHeight;
 
 			// Ensure base scale is positive
 			if (this.baseScale <= 0) {
@@ -382,11 +372,12 @@
 				this.baseScale = 1; // Fallback to 1:1 scale
 			}
 
-			console.log('Base scale calculated:', {
+			console.log('Base scale calculated (silhouette-based):', {
 				baseScale: this.baseScale,
-				refProduct: this.currentProduct.product_name,
-				refSize: `${refWidthCm} x ${refLengthCm} cm`,
-				displayHeight: displayHeight
+				referenceHeight: referenceHeight,
+				referenceSilhouetteHeight: referenceSilhouetteHeight,
+				maxSilhouetteDisplayHeight: maxSilhouetteDisplayHeight,
+				canvasHeight: canvasHeight
 			});
 		}
 
