@@ -95,6 +95,19 @@
 	-webkit-backface-visibility: hidden;
 }
 
+/* Mattress SVG: outline only */
+.mss-canvas svg[data-type="mattress"] * {
+	fill: none !important;
+	stroke: #333 !important;
+	stroke-width: 2 !important;
+}
+
+/* Silhouette SVG: black fill */
+.mss-canvas svg[data-type="silhouette"] * {
+	fill: #000 !important;
+	stroke: none !important;
+}
+
 .mss-canvas svg[data-type="silhouette"] {
 	cursor: grab;
 	touch-action: none;

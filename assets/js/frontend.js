@@ -431,16 +431,37 @@
 				'viewBox': $clonedSvg.attr('viewBox') || '0 0 100 100'
 			});
 
-			// Add cursor for silhouette
+			// Apply styles based on type
 			if (type === 'silhouette') {
+				// Silhouette: black fill
 				$clonedSvg.css('cursor', 'grab');
+				$clonedSvg.find('*').each(function() {
+					const $el = $(this);
+					// Keep original fill or set to black if not set
+					if (!$el.attr('fill') || $el.attr('fill') === 'none') {
+						$el.attr('fill', '#000000');
+					}
+					// Remove stroke if any
+					$el.css('stroke', 'none');
+				});
 				this.silhouetteSvgElement = $clonedSvg[0];
 			} else {
+				// Mattress: outline only (no fill, with stroke)
+				$clonedSvg.find('*').each(function() {
+					const $el = $(this);
+					// Remove fill
+					$el.attr('fill', 'none');
+					// Set stroke if not already set
+					if (!$el.attr('stroke') || $el.attr('stroke') === 'none') {
+						$el.attr('stroke', '#333333');
+						$el.attr('stroke-width', $el.attr('stroke-width') || '2');
+					}
+				});
 				this.mattressSvgElement = $clonedSvg[0];
 			}
 
 			this.$canvas.append($clonedSvg);
-			console.log('SVG appended to canvas');
+			console.log('SVG appended to canvas with styles');
 		}
 
 		renderMattressPlaceholder(width, height, x, y) {
@@ -452,14 +473,15 @@
 				viewBox: `0 0 ${width} ${height}`
 			});
 
+			// Mattress placeholder: outline only (no fill)
 			const $rect = $('<rect/>');
 			$rect.attr({
-				width: width,
-				height: height,
-				x: 0,
-				y: 0,
-				fill: '#e0e0e0',
-				stroke: '#999',
+				width: width - 4,
+				height: height - 4,
+				x: 2,
+				y: 2,
+				fill: 'none',
+				stroke: '#333333',
 				'stroke-width': 2
 			});
 
@@ -469,8 +491,8 @@
 				y: height / 2,
 				'text-anchor': 'middle',
 				'dominant-baseline': 'middle',
-				fill: '#666',
-				'font-size': '14px'
+				fill: '#999',
+				'font-size': '12px'
 			}).text('Mattress SVG');
 
 			$svg.append($rect).append($text);
@@ -494,15 +516,15 @@
 				viewBox: `0 0 ${width} ${height}`
 			});
 
-			const $rect = $('<rect/>');
-			$rect.attr({
-				width: width,
-				height: height,
-				x: 0,
-				y: 0,
-				fill: '#ffcc99',
-				stroke: '#ff9900',
-				'stroke-width': 2
+			// Silhouette placeholder: black fill
+			const $ellipse = $('<ellipse/>');
+			$ellipse.attr({
+				cx: width / 2,
+				cy: height / 2,
+				rx: width / 3,
+				ry: height / 2.2,
+				fill: '#000000',
+				stroke: 'none'
 			});
 
 			const $text = $('<text/>');
@@ -511,11 +533,11 @@
 				y: height / 2,
 				'text-anchor': 'middle',
 				'dominant-baseline': 'middle',
-				fill: '#666',
-				'font-size': '14px'
+				fill: '#ffffff',
+				'font-size': '10px'
 			}).text('Silhouette');
 
-			$svg.append($rect).append($text);
+			$svg.append($ellipse).append($text);
 
 			$svg.css({
 				position: 'absolute',
