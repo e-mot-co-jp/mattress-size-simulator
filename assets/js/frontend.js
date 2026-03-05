@@ -31,6 +31,7 @@
 			// SVG URLs
 			this.svgUrls = config.svgUrls || {};
 			this.products = config.products || [];
+			this.productTitle = config.productTitle || '';
 
 			// Canvas dimensions
 			this.canvasWidth = this.$canvas.width();
@@ -159,6 +160,11 @@
 				return;
 			}
 
+			// 商品タイトルに基づいて自動選択
+			if (this.productTitle) {
+				this.autoSelectProductByTitle();
+			}
+
 			// Load initial product
 			this.loadProduct();
 
@@ -191,6 +197,50 @@
 
 			// Initial render
 			this.render();
+		}
+
+		autoSelectProductByTitle() {
+			if (!this.productTitle) {
+				return;
+			}
+
+			console.log('商品タイトルによる自動選択を試行:', this.productTitle);
+
+			// セレクトボックスの全オプションをループ
+			let matchedIndex = -1;
+			this.$productSelect.find('option').each(function(index) {
+				const optionText = $(this).text();
+				const optionValue = $(this).val();
+				
+				// タイトルにオプションテキストが含まれているか、またはその逆をチェック
+				if (this.productTitle.includes(optionText) || optionText.includes(this.productTitle)) {
+					matchedIndex = index;
+					console.log('マッチしたマットレス:', optionText, 'at index', index);
+					return false; // ループを中断
+				}
+
+				// JSON内の product_name もチェック
+				try {
+					const productData = JSON.parse(optionValue);
+					if (productData.product_name && 
+					    (this.productTitle.includes(productData.product_name) || 
+					     productData.product_name.includes(this.productTitle))) {
+						matchedIndex = index;
+						console.log('マッチしたマットレス (product_name):', productData.product_name, 'at index', index);
+						return false;
+					}
+				} catch (e) {
+					// JSON parse error - skip
+				}
+			}.bind(this));
+
+			// マッチした場合、そのオプションを選択
+			if (matchedIndex >= 0) {
+				this.$productSelect.prop('selectedIndex', matchedIndex);
+				console.log('自動選択完了: index', matchedIndex);
+			} else {
+				console.log('マッチするマットレスが見つかりませんでした');
+			}
 		}
 
 		loadProduct() {

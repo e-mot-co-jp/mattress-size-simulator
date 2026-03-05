@@ -376,6 +376,15 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$female_shoulder_ratio = ! empty( $settings['female_shoulder_ratio'] ) ? (float) $settings['female_shoulder_ratio'] : 1.943;
 		$male_shoulder_ratio   = ! empty( $settings['male_shoulder_ratio'] ) ? (float) $settings['male_shoulder_ratio'] : 1.651;
 
+		// 商品ページまたはバリエーション商品の場合、商品タイトルを取得
+		$product_title = '';
+		if ( function_exists( 'is_product' ) && is_product() ) {
+			global $post;
+			if ( $post ) {
+				$product_title = get_the_title( $post->ID );
+			}
+		}
+
 		$widget_data = [
 			'products'               => $products,
 			'svgUrls'                => [
@@ -388,6 +397,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 			'minHeight'              => $min_height,
 			'femaleShoulderRatio'    => $female_shoulder_ratio,
 			'maleShoulderRatio'      => $male_shoulder_ratio,
+			'productTitle'           => $product_title,
 		];
 
 		?>
