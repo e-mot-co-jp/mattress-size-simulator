@@ -38,6 +38,10 @@
 			this.maxCanvasWidth = config.maxCanvasWidth || 600;
 			this.minHeight = config.minHeight || 400;
 
+			// Shoulder width ratio (SVG actual width / shoulder width cm)
+			this.femaleShoulderRatio = parseFloat(config.femaleShoulderRatio) || 1.943; // 68 / 35
+			this.maleShoulderRatio = parseFloat(config.maleShoulderRatio) || 1.651; // 71 / 43
+
 			// Current state
 			this.currentProduct = null;
 			this.currentGender = 'male';
@@ -360,11 +364,15 @@
 			// シルエットのサイズを基準スケールで計算
 			// 入力値のみで決定され、マットのサイズに依存しない
 			const silhouetteHeightPx = this.currentHeight * this.baseScale;
-			const silhouetteWidthPx = this.currentShoulderWidth * this.baseScale;
+
+			// 肩幅比率を適用: SVG実際の幅 = 肩幅(cm) × 基準スケール × 肩幅比率
+			const shoulderRatio = this.currentGender === 'female' ? this.femaleShoulderRatio : this.maleShoulderRatio;
+			const silhouetteWidthPx = this.currentShoulderWidth * this.baseScale * shoulderRatio;
 
 			console.log('Silhouette size:', {
 				heightCm: this.currentHeight,
 				widthCm: this.currentShoulderWidth,
+				shoulderRatio: shoulderRatio,
 				heightPx: silhouetteHeightPx,
 				widthPx: silhouetteWidthPx
 			});

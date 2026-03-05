@@ -216,6 +216,39 @@ class Mattress_Simulator_Widget extends Widget_Base {
 			]
 		);
 
+		$this->add_control(
+			'shoulder_ratio_label',
+			[
+				'label' => __( 'Shoulder Width Ratio Settings', 'mattress-size-simulator' ),
+				'type'  => Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'female_shoulder_ratio',
+			[
+				'label'       => __( 'Female Shoulder Ratio (Actual Width / Shoulder Width)', 'mattress-size-simulator' ),
+				'type'        => Controls_Manager::NUMBER,
+				'default'     => 1.943, // 68 / 35
+				'min'        => 0.1,
+				'step'       => 0.001,
+				'description' => __( 'e.g., 68px SVG width / 35cm shoulder = 1.943', 'mattress-size-simulator' ),
+			]
+		);
+
+		$this->add_control(
+			'male_shoulder_ratio',
+			[
+				'label'       => __( 'Male Shoulder Ratio (Actual Width / Shoulder Width)', 'mattress-size-simulator' ),
+				'type'        => Controls_Manager::NUMBER,
+				'default'     => 1.651, // 71 / 43
+				'min'        => 0.1,
+				'step'       => 0.001,
+				'description' => __( 'e.g., 71px SVG width / 43cm shoulder = 1.651', 'mattress-size-simulator' ),
+			]
+		);
+
 		$this->end_controls_section();
 
 		// Styling Section
@@ -340,16 +373,21 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$female_svg_url   = ! empty( $settings['female_silhouette_svg']['url'] ) ? $settings['female_silhouette_svg']['url'] : '';
 		$male_svg_url     = ! empty( $settings['male_silhouette_svg']['url'] ) ? $settings['male_silhouette_svg']['url'] : '';
 
+		$female_shoulder_ratio = ! empty( $settings['female_shoulder_ratio'] ) ? (float) $settings['female_shoulder_ratio'] : 1.943;
+		$male_shoulder_ratio   = ! empty( $settings['male_shoulder_ratio'] ) ? (float) $settings['male_shoulder_ratio'] : 1.651;
+
 		$widget_data = [
-			'products'        => $products,
-			'svgUrls'         => [
+			'products'               => $products,
+			'svgUrls'                => [
 				'mummy'  => $mummy_svg_url,
 				'square' => $square_svg_url,
 				'female' => $female_svg_url,
 				'male'   => $male_svg_url,
 			],
-			'maxCanvasWidth'  => $max_canvas_width,
-			'minHeight'       => $min_height,
+			'maxCanvasWidth'         => $max_canvas_width,
+			'minHeight'              => $min_height,
+			'femaleShoulderRatio'    => $female_shoulder_ratio,
+			'maleShoulderRatio'      => $male_shoulder_ratio,
 		];
 
 		?>
