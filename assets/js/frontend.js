@@ -44,6 +44,9 @@
 			this.currentHeight = 170;
 			this.currentShoulderWidth = 45;
 
+			// Base scale for consistent sizing (set during initialization)
+			this.baseScale = null;
+
 			// Silhouette position for dragging
 			this.silhouetteOffsetX = 0;
 			this.silhouetteOffsetY = 0;
@@ -51,6 +54,7 @@
 			this.dragStartX = 0;
 			this.dragStartY = 0;
 			this.lastRenderTime = 0;
+			this.renderTimeout = null;
 
 			this.init();
 		}
@@ -94,6 +98,9 @@
 			// Handle window resize
 			$(window).on('resize', () => this.onWindowResize());
 
+			// Calculate base scale using initial product
+			this.calculateBaseScale();
+
 			// Initial render
 			this.render();
 		}
@@ -118,6 +125,7 @@
 			this.loadProduct();
 			this.silhouetteOffsetX = 0;
 			this.silhouetteOffsetY = 0;
+			// Don't recalculate base scale to keep person size consistent
 			this.render();
 		}
 
@@ -137,19 +145,58 @@
 		}
 
 		debounceRender() {
-			const now = Date.now();
-			if (now - this.lastRenderTime < 100) {
-				// Skip render if less than 100ms since last render
-				return;
+			// Use requestAnimationFrame for smooth updates
+			if (this.renderTimeout) {
+				cancelAnimationFrame(this.renderTimeout);
 			}
-			this.lastRenderTime = now;
-			this.render();
+			this.renderTimeout = requestAnimationFrame(() => {
+				this.render();
+			});
 		}
 
 		onWindowResize() {
 			this.canvasWidth = this.$canvas.width();
 			this.canvasHeight = this.$canvas.height();
+			// Recalculate base scale on resize
+			this.calculateBaseScale();
 			this.render();
+		}
+
+		calculateBaseScale() {
+			if (!this.currentProduct) {
+				console.error('Cannot calculate base scale without product');
+				return;
+			}
+
+			// Use canvas dimensions
+			const canvasWidth = this.$canvas.width() || this.maxCanvasWidth;
+			const canvasHeight = this.$canvas.height() || this.minHeight;
+
+			// Use initial product as reference for base scale
+			const refWidthCm = parseFloat(this.currentProduct.mattress_width);
+			const refLengthCm = parseFloat(this.currentProduct.mattress_length);
+			const refAspectRatio = refWidthCm / refLengthCm;
+
+			// Calculate max display size (90% width, 70% height)
+			const maxWidth = canvasWidth * 0.9;
+			const maxHeight = canvasHeight * 0.7;
+
+			// Calculate scale based on which dimension is limiting
+			let displayHeight = maxWidth / refAspectRatio;
+			if (displayHeight > maxHeight) {
+				displayHeight = maxHeight;
+			}
+
+			// Base scale = display size (px) / actual size (cm)
+			// Using length as the reference dimension
+			this.baseScale = displayHeight / refLengthCm;
+
+			console.log('Base scale calculated:', {
+				baseScale: this.baseScale,
+				refProduct: this.currentProduct.product_name,
+				refSize: `${refWidthCm} x ${refLengthCm} cm`,
+				displayHeight: displayHeight
+			});
 		}
 
 		onMouseDown(e) {
@@ -263,6 +310,11 @@
 				return;
 			}
 
+			if (!this.baseScale) {
+				console.error('Base scale not calculated');
+				return;
+			}
+
 			// Update canvas dimensions
 			this.canvasWidth = this.$canvas.width();
 			if (this.canvasWidth === 0) {
@@ -280,49 +332,35 @@
 				canvasWidth: this.canvasWidth,
 				canvasHeight: this.canvasHeight,
 				product: this.currentProduct,
-				svgUrls: this.svgUrls
+				baseScale: this.baseScale,
+				height: this.currentHeight,
+				shoulderWidth: this.currentShoulderWidth
 			});
 
-			// Calculate mattress dimensions based on actual cm measurements
 			// マットの実際のサイズ（cm単位）
 			const mattressWidthCm = parseFloat(this.currentProduct.mattress_width);
 			const mattressLengthCm = parseFloat(this.currentProduct.mattress_length);
-			const mattressAspectRatio = mattressWidthCm / mattressLengthCm;
 
 			console.log('Mattress size (cm):', {width: mattressWidthCm, length: mattressLengthCm});
 
-			// キャンバスの利用可能サイズの90%を最大とする
-			const maxMattressWidth = this.canvasWidth * 0.9;
-			const maxMattressHeight = this.canvasHeight * 0.7;
+			// 基準スケールを使用してマットのピクセルサイズを計算
+			// 1cmの表現がマットと人で統一される
+			const mattressWidthPx = mattressWidthCm * this.baseScale;
+			const mattressHeightPx = mattressLengthCm * this.baseScale;
 
-			let mattressWidth, mattressHeight;
-
-			// 幅基準でスケールを計算
-			mattressWidth = maxMattressWidth;
-			mattressHeight = mattressWidth / mattressAspectRatio;
-
-			// 高さが超える場合は高さ基準でスケール
-			if (mattressHeight > maxMattressHeight) {
-				mattressHeight = maxMattressHeight;
-				mattressWidth = mattressHeight * mattressAspectRatio;
-			}
-
-			// スケール比率を計算（ピクセル/cm）
-			const scale = mattressHeight / mattressLengthCm; // 長さを基準にスケール計算
-
-			console.log('Scale:', scale, 'px/cm');
+			console.log('Mattress size (px):', {width: mattressWidthPx, height: mattressHeightPx});
 
 			// Center the mattress horizontally and position it in the middle
-			const mattressX = (this.canvasWidth - mattressWidth) / 2;
-			const mattressY = (this.canvasHeight - mattressHeight) / 2;
+			const mattressX = (this.canvasWidth - mattressWidthPx) / 2;
+			const mattressY = (this.canvasHeight - mattressHeightPx) / 2;
 
 			// Load and render mattress SVG
-			this.loadAndRenderMattress(mattressWidth, mattressHeight, mattressX, mattressY);
+			this.loadAndRenderMattress(mattressWidthPx, mattressHeightPx, mattressX, mattressY);
 
-			// Calculate silhouette dimensions using the same scale
-			// シルエットのサイズをcm単位からピクセルに変換
-			const silhouetteHeightPx = this.currentHeight * scale; // 身長(cm) * スケール
-			const silhouetteWidthPx = this.currentShoulderWidth * scale; // 肩幅(cm) * スケール
+			// シルエットのサイズを基準スケールで計算
+			// 入力値のみで決定され、マットのサイズに依存しない
+			const silhouetteHeightPx = this.currentHeight * this.baseScale;
+			const silhouetteWidthPx = this.currentShoulderWidth * this.baseScale;
 
 			console.log('Silhouette size:', {
 				heightCm: this.currentHeight,
@@ -332,8 +370,8 @@
 			});
 
 			// シルエットの初期位置（中央配置 + オフセット）
-			const silhouetteX = mattressX + (mattressWidth - silhouetteWidthPx) / 2 + this.silhouetteOffsetX;
-			const silhouetteY = mattressY + (mattressHeight - silhouetteHeightPx) / 2 + this.silhouetteOffsetY;
+			const silhouetteX = mattressX + (mattressWidthPx - silhouetteWidthPx) / 2 + this.silhouetteOffsetX;
+			const silhouetteY = mattressY + (mattressHeightPx - silhouetteHeightPx) / 2 + this.silhouetteOffsetY;
 
 			this.loadAndRenderSilhouette(silhouetteWidthPx, silhouetteHeightPx, silhouetteX, silhouetteY);
 		}
