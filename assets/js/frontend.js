@@ -208,9 +208,10 @@
 
 			// セレクトボックスの全オプションをループ
 			let matchedIndex = -1;
-			this.$productSelect.find('option').each(function(index) {
-				const optionText = $(this).text();
-				const optionValue = $(this).val();
+			this.$productSelect.find('option').each((index, element) => {
+				const $option = $(element);
+				const optionText = $option.text();
+				const optionValue = $option.val();
 				
 				// タイトルにオプションテキストが含まれているか、またはその逆をチェック
 				if (this.productTitle.includes(optionText) || optionText.includes(this.productTitle)) {
@@ -232,7 +233,7 @@
 				} catch (e) {
 					// JSON parse error - skip
 				}
-			}.bind(this));
+			});
 
 			// マッチした場合、そのオプションを選択
 			if (matchedIndex >= 0) {
