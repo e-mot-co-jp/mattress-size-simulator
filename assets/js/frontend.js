@@ -64,14 +64,22 @@
 		}
 
 		init() {
-			console.log('Initializing Mattress Size Simulator');
-			console.log('Products:', this.products);
-			console.log('SVG URLs:', this.svgUrls);
+			console.log('マットレスサイズシミュレーターを初期化中');
+			console.log('商品:', this.products);
+			console.log('SVG URL:', this.svgUrls);
+			console.log('詳細な設定情報:', {
+				products: this.products,
+				svgUrls: this.svgUrls,
+				maxCanvasWidth: this.maxCanvasWidth,
+				minHeight: this.minHeight,
+				femaleShoulderRatio: this.femaleShoulderRatio,
+				maleShoulderRatio: this.maleShoulderRatio
+			});
 
 			// Check if we have products
 			if (!this.products || this.products.length === 0) {
-				console.error('No products configured');
-				this.$canvas.html('<div style="padding: 20px; text-align: center; color: #d32f2f;">No mattress products configured. Please add products in the widget settings.</div>');
+				console.error('薬を設定していません');
+				this.$canvas.html('<div style="padding: 20px; text-align: center; color: #d32f2f;">薬が設定されていません。ウィジェット設定で薬を追加してください。</div>');
 				return;
 			}
 
@@ -79,7 +87,7 @@
 			this.loadProduct();
 
 			if (!this.currentProduct) {
-				console.error('Failed to load initial product');
+				console.error('初期薬の読み込みに失敗');
 				return;
 			}
 
@@ -387,10 +395,17 @@
 		loadAndRenderMattress(width, height, x, y) {
 			const svgUrl = this.currentProduct.mattress_shape === 'mummy' ? this.svgUrls.mummy : this.svgUrls.square;
 
-			console.log('Loading mattress SVG:', svgUrl);
+			console.log('マットレス SVG を読み込み中:', {
+				url: svgUrl,
+				mattress_shape: this.currentProduct.mattress_shape,
+				width: width,
+				height: height,
+				x: x,
+				y: y
+			});
 
 			if (!svgUrl) {
-				console.warn('Mattress SVG URL not set, rendering placeholder');
+				console.warn('マットレス SVG URL が設定されていません。プレースホルダーを表示');
 				this.renderMattressPlaceholder(width, height, x, y);
 				return;
 			}
@@ -407,24 +422,34 @@
 				type: 'GET',
 				dataType: 'text',
 				success: (svgContent) => {
-					console.log('Mattress SVG loaded successfully');
+					console.log('マットレス SVG を正常に読み込みました', {
+						url: svgUrl,
+						contentLength: svgContent.length,
+						contentPreview: svgContent.substring(0, 100)
+					});
 					const $svg = $(svgContent).filter('svg').add($(svgContent).find('svg'));
 
 					if ($svg.length === 0) {
-						console.warn('No SVG element found, creating wrapper');
+						console.warn('SVG 要素が見つかりません。ラッパーを作成しています');
 						// If no SVG found, try wrapping the content as SVG
 						const $svgWrapper = $('<svg xmlns="http://www.w3.org/2000/svg"></svg>');
 						$svgWrapper.html(svgContent);
 						this.svgCache[svgUrl] = $svgWrapper.clone();
 						this.placeSvgInCanvas($svgWrapper, width, height, x, y, 'mattress');
 					} else {
-						console.log('SVG element found, caching and rendering');
+						console.log('SVG 要素が見つかり、キャッシュして描画します');
 						this.svgCache[svgUrl] = $svg.eq(0).clone();
 						this.placeSvgInCanvas($svg.eq(0).clone(), width, height, x, y, 'mattress');
 					}
 				},
 				error: (xhr, status, error) => {
-					console.error('Failed to load mattress SVG:', {url: svgUrl, status, error});
+					console.error('マットレス SVG の読み込みに失敗:', {
+						url: svgUrl,
+						status: status,
+						error: error,
+						statusCode: xhr.status,
+						statusText: xhr.statusText
+					});
 					// Render placeholder
 					this.renderMattressPlaceholder(width, height, x, y);
 				}
@@ -434,17 +459,24 @@
 		loadAndRenderSilhouette(width, height, x, y) {
 			const svgUrl = this.currentGender === 'female' ? this.svgUrls.female : this.svgUrls.male;
 
-			console.log('Loading silhouette SVG:', svgUrl);
+			console.log('シルエット SVG を読み込み中:', {
+				url: svgUrl,
+				gender: this.currentGender,
+				width: width,
+				height: height,
+				x: x,
+				y: y
+			});
 
 			if (!svgUrl) {
-				console.warn('Silhouette SVG URL not set, rendering placeholder');
+				console.warn('シルエット SVG URL が設定されていません。プレースホルダーを表示');
 				this.renderSilhouettePlaceholder(width, height, x, y);
 				return;
 			}
 
 			// Check cache first
 			if (this.svgCache[svgUrl]) {
-				console.log('Using cached silhouette SVG');
+				console.log('キャッシュされたシルエット SVG を使用');
 				this.placeSvgInCanvas(this.svgCache[svgUrl].clone(), width, height, x, y, 'silhouette');
 				return;
 			}
@@ -454,24 +486,34 @@
 				type: 'GET',
 				dataType: 'text',
 				success: (svgContent) => {
-					console.log('Silhouette SVG loaded successfully');
+					console.log('シルエット SVG を正常に読み込みました', {
+						url: svgUrl,
+						contentLength: svgContent.length,
+						contentPreview: svgContent.substring(0, 100)
+					});
 					const $svg = $(svgContent).filter('svg').add($(svgContent).find('svg'));
 
 					if ($svg.length === 0) {
-						console.warn('No SVG element found, creating wrapper');
+						console.warn('SVG 要素が見つかりません。ラッパーを作成しています');
 						const $svgWrapper = $('<svg xmlns="http://www.w3.org/2000/svg"></svg>');
 						$svgWrapper.html(svgContent);
 						this.svgCache[svgUrl] = $svgWrapper.clone();
 						this.placeSvgInCanvas($svgWrapper, width, height, x, y, 'silhouette');
 					} else {
-						console.log('SVG element found, caching and rendering');
+						console.log('SVG 要素が見つかり、キャッシュして描画します');
 						const $clonedSvg = $svg.eq(0).clone();
 						this.svgCache[svgUrl] = $clonedSvg.clone();
 						this.placeSvgInCanvas($clonedSvg, width, height, x, y, 'silhouette');
 					}
 				},
 				error: (xhr, status, error) => {
-					console.error('Failed to load silhouette SVG:', {url: svgUrl, status, error});
+					console.error('シルエット SVG の読み込みに失敗:', {
+						url: svgUrl,
+						status: status,
+						error: error,
+						statusCode: xhr.status,
+						statusText: xhr.statusText
+					});
 					// Render placeholder
 					this.renderSilhouettePlaceholder(width, height, x, y);
 				}

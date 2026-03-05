@@ -31,7 +31,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Mattress Size Simulator', 'mattress-size-simulator' );
+		return __( 'マットレスサイズシミュレーター', 'mattress-size-simulator' );
 	}
 
 	/**
@@ -78,7 +78,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$this->start_controls_section(
 			'section_mattress_products',
 			[
-				'label' => __( 'Mattress Products', 'mattress-size-simulator' ),
+				'label' => __( 'マットレス商品', 'mattress-size-simulator' ),
 				'tab'   => Controls_Manager::TAB_CONTENT,
 			]
 		);
@@ -86,39 +86,39 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$this->add_control(
 			'mattress_products',
 			[
-				'label'       => __( 'Mattress Products', 'mattress-size-simulator' ),
+				'label'       => __( 'マットレス商品', 'mattress-size-simulator' ),
 				'type'        => Controls_Manager::REPEATER,
 				'default'     => $this->get_default_mattress_products(),
 				'fields'      => [
 					[
 						'name'       => 'product_name',
-						'label'      => __( 'Product Name', 'mattress-size-simulator' ),
+						'label'      => __( '商品名', 'mattress-size-simulator' ),
 						'type'       => Controls_Manager::TEXT,
 						'default'    => 'R+',
-						'placeholder' => __( 'e.g., R+ (56 x 185 cm)', 'mattress-size-simulator' ),
+						'placeholder' => __( '例: R+ (56 x 185 cm)', 'mattress-size-simulator' ),
 					],
 					[
 						'name'       => 'mattress_width',
-						'label'      => __( 'Mattress Width (cm)', 'mattress-size-simulator' ),
+						'label'      => __( 'マット幅 (cm)', 'mattress-size-simulator' ),
 						'type'       => Controls_Manager::NUMBER,
 						'default'    => 56,
 						'min'        => 1,
 					],
 					[
 						'name'       => 'mattress_length',
-						'label'      => __( 'Mattress Length (cm)', 'mattress-size-simulator' ),
+						'label'      => __( 'マット長さ (cm)', 'mattress-size-simulator' ),
 						'type'       => Controls_Manager::NUMBER,
 						'default'    => 185,
 						'min'        => 1,
 					],
 					[
 						'name'       => 'mattress_shape',
-						'label'      => __( 'Mattress Shape', 'mattress-size-simulator' ),
+						'label'      => __( 'マット形状', 'mattress-size-simulator' ),
 						'type'       => Controls_Manager::SELECT,
 						'default'    => 'mummy',
 						'options'    => [
-							'mummy'  => __( 'Mummy', 'mattress-size-simulator' ),
-							'square' => __( 'Square', 'mattress-size-simulator' ),
+							'mummy'  => __( 'ミイラ型', 'mattress-size-simulator' ),
+							'square' => __( '長方形', 'mattress-size-simulator' ),
 						],
 					],
 				],
@@ -132,7 +132,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$this->start_controls_section(
 			'section_svg_assets',
 			[
-				'label' => __( 'SVG Assets', 'mattress-size-simulator' ),
+				'label' => __( 'SVG アセット', 'mattress-size-simulator' ),
 				'tab'   => Controls_Manager::TAB_CONTENT,
 			]
 		);
@@ -140,44 +140,44 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$this->add_control(
 			'mummy_svg',
 			[
-				'label'      => __( 'Mummy Mat SVG', 'mattress-size-simulator' ),
+				'label'      => __( 'ミイラ型マット SVG', 'mattress-size-simulator' ),
 				'type'       => Controls_Manager::MEDIA,
 				'media_types' => [ 'image/svg+xml' ],
 				'default'    => [],
-				'description' => __( 'Upload SVG file for mummy-shaped mattress', 'mattress-size-simulator' ),
+				'description' => __( 'ミイラ型マット用のSVGファイルをアップロード', 'mattress-size-simulator' ),
 			]
 		);
 
 		$this->add_control(
 			'square_svg',
 			[
-				'label'      => __( 'Square Mat SVG', 'mattress-size-simulator' ),
+				'label'      => __( '長方形マット SVG', 'mattress-size-simulator' ),
 				'type'       => Controls_Manager::MEDIA,
 				'media_types' => [ 'image/svg+xml' ],
 				'default'    => [],
-				'description' => __( 'Upload SVG file for square-shaped mattress', 'mattress-size-simulator' ),
+				'description' => __( '長方形マット用のSVGファイルをアップロード', 'mattress-size-simulator' ),
 			]
 		);
 
 		$this->add_control(
 			'female_silhouette_svg',
 			[
-				'label'      => __( 'Female Silhouette SVG', 'mattress-size-simulator' ),
+				'label'      => __( '女性シルエット SVG', 'mattress-size-simulator' ),
 				'type'       => Controls_Manager::MEDIA,
 				'media_types' => [ 'image/svg+xml' ],
 				'default'    => [],
-				'description' => __( 'Upload SVG file for female silhouette', 'mattress-size-simulator' ),
+				'description' => __( '女性シルエット用のSVGファイルをアップロード', 'mattress-size-simulator' ),
 			]
 		);
 
 		$this->add_control(
 			'male_silhouette_svg',
 			[
-				'label'      => __( 'Male Silhouette SVG', 'mattress-size-simulator' ),
+				'label'      => __( '男性シルエット SVG', 'mattress-size-simulator' ),
 				'type'       => Controls_Manager::MEDIA,
 				'media_types' => [ 'image/svg+xml' ],
 				'default'    => [],
-				'description' => __( 'Upload SVG file for male silhouette', 'mattress-size-simulator' ),
+				'description' => __( '男性シルエット用のSVGファイルをアップロード', 'mattress-size-simulator' ),
 			]
 		);
 
@@ -187,7 +187,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$this->start_controls_section(
 			'section_settings',
 			[
-				'label' => __( 'Settings', 'mattress-size-simulator' ),
+				'label' => __( '設定', 'mattress-size-simulator' ),
 				'tab'   => Controls_Manager::TAB_CONTENT,
 			]
 		);
@@ -195,31 +195,31 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$this->add_responsive_control(
 			'max_canvas_width',
 			[
-				'label'      => __( 'Max Canvas Width (px)', 'mattress-size-simulator' ),
+				'label'      => __( 'キャンバス最大幅 (px)', 'mattress-size-simulator' ),
 				'type'       => Controls_Manager::NUMBER,
 				'default'    => 600,
 				'min'        => 200,
 				'tablet_default' => 500,
 				'mobile_default' => 300,
-				'description' => __( 'Maximum width of the simulator canvas', 'mattress-size-simulator' ),
+				'description' => __( 'シミュレーターキャンバスの最大幅', 'mattress-size-simulator' ),
 			]
 		);
 
 		$this->add_control(
 			'min_height',
 			[
-				'label'      => __( 'Min Canvas Height (px)', 'mattress-size-simulator' ),
+				'label'      => __( 'キャンバス最小高さ (px)', 'mattress-size-simulator' ),
 				'type'       => Controls_Manager::NUMBER,
 				'default'    => 400,
 				'min'        => 200,
-				'description' => __( 'Minimum height of the simulator canvas', 'mattress-size-simulator' ),
+				'description' => __( 'シミュレーターキャンバスの最小高さ', 'mattress-size-simulator' ),
 			]
 		);
 
 		$this->add_control(
 			'shoulder_ratio_label',
 			[
-				'label' => __( 'Shoulder Width Ratio Settings', 'mattress-size-simulator' ),
+				'label' => __( '肩幅比率設定', 'mattress-size-simulator' ),
 				'type'  => Controls_Manager::HEADING,
 				'separator' => 'before',
 			]
@@ -228,24 +228,24 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$this->add_control(
 			'female_shoulder_ratio',
 			[
-				'label'       => __( 'Female Shoulder Ratio (Actual Width / Shoulder Width)', 'mattress-size-simulator' ),
+				'label'       => __( '女性肩幅比率 (SVG幅 / 肩幅cm)', 'mattress-size-simulator' ),
 				'type'        => Controls_Manager::NUMBER,
 				'default'     => 1.943, // 68 / 35
 				'min'        => 0.1,
 				'step'       => 0.001,
-				'description' => __( 'e.g., 68px SVG width / 35cm shoulder = 1.943', 'mattress-size-simulator' ),
+				'description' => __( '例: 68px SVG幅 / 35cm肩幅 = 1.943', 'mattress-size-simulator' ),
 			]
 		);
 
 		$this->add_control(
 			'male_shoulder_ratio',
 			[
-				'label'       => __( 'Male Shoulder Ratio (Actual Width / Shoulder Width)', 'mattress-size-simulator' ),
+				'label'       => __( '男性肩幅比率 (SVG幅 / 肩幅cm)', 'mattress-size-simulator' ),
 				'type'        => Controls_Manager::NUMBER,
 				'default'     => 1.651, // 71 / 43
 				'min'        => 0.1,
 				'step'       => 0.001,
-				'description' => __( 'e.g., 71px SVG width / 43cm shoulder = 1.651', 'mattress-size-simulator' ),
+				'description' => __( '例: 71px SVG幅 / 43cm肩幅 = 1.651', 'mattress-size-simulator' ),
 			]
 		);
 
@@ -255,7 +255,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$this->start_controls_section(
 			'section_style',
 			[
-				'label' => __( 'Style', 'mattress-size-simulator' ),
+				'label' => __( 'スタイル', 'mattress-size-simulator' ),
 				'tab'   => Controls_Manager::TAB_STYLE,
 			]
 		);
@@ -263,7 +263,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$this->add_control(
 			'input_label_color',
 			[
-				'label'     => __( 'Input Label Color', 'mattress-size-simulator' ),
+				'label'     => __( '入力ラベル色', 'mattress-size-simulator' ),
 				'type'      => Controls_Manager::COLOR,
 				'default'   => '#333333',
 				'selectors' => [
@@ -275,7 +275,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$this->add_control(
 			'input_background_color',
 			[
-				'label'     => __( 'Input Background Color', 'mattress-size-simulator' ),
+				'label'     => __( '入力背景色', 'mattress-size-simulator' ),
 				'type'      => Controls_Manager::COLOR,
 				'default'   => '#ffffff',
 				'selectors' => [
@@ -287,7 +287,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 		$this->add_control(
 			'canvas_background_color',
 			[
-				'label'     => __( 'Canvas Background Color', 'mattress-size-simulator' ),
+				'label'     => __( 'キャンバス背景色', 'mattress-size-simulator' ),
 				'type'      => Controls_Manager::COLOR,
 				'default'   => '#f5f5f5',
 				'selectors' => [
@@ -398,7 +398,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 			<div class="mss-controls">
 				<div class="mss-control-group">
 					<label class="mss-label" for="mss-product-select">
-						<?php esc_html_e( 'Select Mattress', 'mattress-size-simulator' ); ?>
+					<?php esc_html_e( 'マットレスを選択', 'mattress-size-simulator' ); ?>
 					</label>
 					<select id="mss-product-select" class="mss-input mss-select">
 						<?php foreach ( $products as $product ) : ?>
@@ -412,24 +412,24 @@ class Mattress_Simulator_Widget extends Widget_Base {
 
 				<div class="mss-control-group">
 					<label class="mss-label" for="mss-gender-select">
-						<?php esc_html_e( 'Select Gender', 'mattress-size-simulator' ); ?>
-					</label>
-					<select id="mss-gender-select" class="mss-input mss-select">
-						<option value="male"><?php esc_html_e( 'Male', 'mattress-size-simulator' ); ?></option>
-						<option value="female"><?php esc_html_e( 'Female', 'mattress-size-simulator' ); ?></option>
+					<?php esc_html_e( '性別を選択', 'mattress-size-simulator' ); ?>
+				</label>
+				<select id="mss-gender-select" class="mss-input mss-select">
+					<option value="male"><?php esc_html_e( '男性', 'mattress-size-simulator' ); ?></option>
+					<option value="female"><?php esc_html_e( '女性', 'mattress-size-simulator' ); ?></option>
 					</select>
 				</div>
 
 				<div class="mss-control-group">
 					<label class="mss-label" for="mss-height-input">
-						<?php esc_html_e( 'Height (cm)', 'mattress-size-simulator' ); ?>
-					</label>
-					<input type="number" id="mss-height-input" class="mss-input" min="140" max="220" value="170" step="1">
-				</div>
+					<?php esc_html_e( '身長 (cm)', 'mattress-size-simulator' ); ?>
+				</label>
+				<input type="number" id="mss-height-input" class="mss-input" min="140" max="220" value="170" step="1">
+			</div>
 
-				<div class="mss-control-group">
-					<label class="mss-label" for="mss-shoulder-width-input">
-						<?php esc_html_e( 'Shoulder Width (cm)', 'mattress-size-simulator' ); ?>
+			<div class="mss-control-group">
+				<label class="mss-label" for="mss-shoulder-width-input">
+					<?php esc_html_e( '肩幅 (cm)', 'mattress-size-simulator' ); ?>
 					</label>
 					<input type="number" id="mss-shoulder-width-input" class="mss-input" min="30" max="60" value="45" step="1">
 				</div>
@@ -444,7 +444,7 @@ class Mattress_Simulator_Widget extends Widget_Base {
 
 			<!-- Instructions -->
 			<div class="mss-instructions">
-				<p><?php esc_html_e( 'Drag the silhouette on the canvas to move it around the mattress.', 'mattress-size-simulator' ); ?></p>
+			<p><?php esc_html_e( 'キャンバス上の人体をドラッグしてマットレス上を移動一々。', 'mattress-size-simulator' ); ?></p>
 			</div>
 		</div>
 		<?php
