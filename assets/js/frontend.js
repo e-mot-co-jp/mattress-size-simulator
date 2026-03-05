@@ -488,9 +488,12 @@
 				overflow: 'visible'
 			});
 
+			// Set preserveAspectRatio based on type
+			// Silhouette: 'none' to allow independent width/height scaling
+			// Mattress: 'none' to allow independent width/height scaling
 			$clonedSvg.attr({
 				'data-type': type,
-				'preserveAspectRatio': 'xMidYMid meet',
+				'preserveAspectRatio': 'none',
 				'viewBox': $clonedSvg.attr('viewBox') || '0 0 100 100'
 			});
 
