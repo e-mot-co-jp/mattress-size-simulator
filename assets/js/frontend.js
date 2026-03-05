@@ -42,11 +42,17 @@
 			this.femaleShoulderRatio = parseFloat(config.femaleShoulderRatio) || 1.943; // 68 / 35
 			this.maleShoulderRatio = parseFloat(config.maleShoulderRatio) || 1.651; // 71 / 43
 
+			// 性別ごとの初期値
+			this.defaultValues = {
+				male: { height: 171, shoulderWidth: 40 },
+				female: { height: 158, shoulderWidth: 36 }
+			};
+
 			// Current state
 			this.currentProduct = null;
 			this.currentGender = 'male';
-			this.currentHeight = 170;
-			this.currentShoulderWidth = 45;
+			this.currentHeight = 171;
+			this.currentShoulderWidth = 40;
 
 			// Base scale for consistent sizing (set during initialization)
 			this.baseScale = null;
@@ -213,6 +219,16 @@
 
 		onGenderChange() {
 			this.currentGender = this.$genderSelect.val();
+			
+			// 性別に応じた初期値を設定
+			const defaults = this.defaultValues[this.currentGender];
+			this.currentHeight = defaults.height;
+			this.currentShoulderWidth = defaults.shoulderWidth;
+			
+			// 入力欄にも初期値を反映
+			this.$heightInput.val(defaults.height);
+			this.$shoulderWidthInput.val(defaults.shoulderWidth);
+			
 			this.render();
 		}
 

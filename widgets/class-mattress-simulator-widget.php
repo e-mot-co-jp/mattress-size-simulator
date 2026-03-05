@@ -424,14 +424,14 @@ class Mattress_Simulator_Widget extends Widget_Base {
 					<label class="mss-label" for="mss-height-input">
 					<?php esc_html_e( '身長 (cm)', 'mattress-size-simulator' ); ?>
 				</label>
-				<input type="number" id="mss-height-input" class="mss-input" min="140" max="220" value="170" step="1">
+				<input type="number" id="mss-height-input" class="mss-input" min="140" max="220" value="171" step="1">
 			</div>
 
 			<div class="mss-control-group">
 				<label class="mss-label" for="mss-shoulder-width-input">
 					<?php esc_html_e( '肩幅 (cm)', 'mattress-size-simulator' ); ?>
 					</label>
-					<input type="number" id="mss-shoulder-width-input" class="mss-input" min="30" max="60" value="45" step="1">
+					<input type="number" id="mss-shoulder-width-input" class="mss-input" min="30" max="60" value="40" step="1">
 				</div>
 			</div>
 
