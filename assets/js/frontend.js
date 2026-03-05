@@ -496,7 +496,10 @@
 
 			// シルエットのサイズを基準スケールで計算
 			// 入力値のみで決定され、マットのサイズに依存しない
-			const silhouetteHeightPx = this.currentHeight * this.baseScale;
+			
+			// 身長比率を適用: 画像height : 身長部分 = 15 : 14
+			const heightRatio = 15 / 14; // 1.071...
+			const silhouetteHeightPx = (this.currentHeight * this.baseScale) / heightRatio;
 
 			// 肩幅比率を適用: SVG実際の幅 = 肩幅(cm) × 基準スケール × 肩幅比率
 			const shoulderRatio = this.currentGender === 'female' ? this.femaleShoulderRatio : this.maleShoulderRatio;
@@ -505,6 +508,7 @@
 			console.log('Silhouette size:', {
 				heightCm: this.currentHeight,
 				widthCm: this.currentShoulderWidth,
+				heightRatio: heightRatio,
 				shoulderRatio: shoulderRatio,
 				heightPx: silhouetteHeightPx,
 				widthPx: silhouetteWidthPx
