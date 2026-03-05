@@ -499,7 +499,7 @@
 			
 			// 身長比率を適用: 画像height : 身長部分 = 15 : 14
 			// 15 : 14 = x : 170 => x = 170 × (15/14)
-			const heightRatio = 17 / 14; // 1.071...
+			const heightRatio = 17 / 15; // 1.071...
 			const silhouetteHeightPx = (this.currentHeight * this.baseScale) * heightRatio;
 
 			// 肩幅比率を適用: SVG実際の幅 = 肩幅(cm) × 基準スケール × 肩幅比率
