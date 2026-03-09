@@ -64,6 +64,8 @@
 			this.isDragging = false;
 			this.dragStartX = 0;
 			this.dragStartY = 0;
+			this.initialTouchX = 0; // 長押し判定用の初期タッチ位置
+			this.initialTouchY = 0;
 			this.lastRenderTime = 0;
 			this.renderTimeout = null;
 
@@ -439,14 +441,15 @@
 			const touchY = touch.clientY - rect.top;
 
 			if (this.isSilhouetteClicked(touchX, touchY)) {
-				e.preventDefault(); // スクロールを防止
-				
-				// 長押しタイマーを開始
+				// 長押しタイマー中のタッチ位置を記録
+				this.initialTouchX = touchX;
+				this.initialTouchY = touchY;
 				this.dragStartX = touchX;
 				this.dragStartY = touchY;
 				
+				// 長押しタイマーを開始（preventDefaultはonTouchMoveで行う）
 				this.longPressTimer = setTimeout(() => {
-					// 長押し成功：ドラッグ開始
+					// 長押し成功：ドラッグ開始準備完了
 					this.isLongPressActive = true;
 					this.isDragging = true;
 					
@@ -472,24 +475,26 @@
 			const touchX = touch.clientX - rect.left;
 			const touchY = touch.clientY - rect.top;
 
-			// 長押し前に動かそうとした場合、タイマーをキャンセル
+			// 長押し前：移動距離をチェック
 			if (this.longPressTimer && !this.isLongPressActive) {
 				const moveDistance = Math.sqrt(
-					Math.pow(touchX - this.dragStartX, 2) + 
-					Math.pow(touchY - this.dragStartY, 2)
+					Math.pow(touchX - this.initialTouchX, 2) + 
+					Math.pow(touchY - this.initialTouchY, 2)
 				);
 				
-				// 10px以上動いたらタイマーキャンセル（誤タッチ防止）
+				// 10px以上動いたらタイマーキャンセル
 				if (moveDistance > 10) {
 					clearTimeout(this.longPressTimer);
 					this.longPressTimer = null;
-					return;
 				}
+				// 長押し確定前はスクロールを許可（preventDefaultしない）
+				return;
 			}
 
 			// 長押し後のみドラッグを許可
 			if (!this.isDragging || !this.isLongPressActive) return;
 			
+			// ドラッグ中はスクロールを防止
 			e.preventDefault();
 
 			const deltaX = touchX - this.dragStartX;
