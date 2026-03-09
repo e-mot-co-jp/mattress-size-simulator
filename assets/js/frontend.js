@@ -67,6 +67,11 @@
 			this.lastRenderTime = 0;
 			this.renderTimeout = null;
 
+			// 長押しドラッグ用
+			this.longPressTimer = null;
+			this.isLongPressActive = false;
+			this.longPressDelay = 500; // 500ms長押しでドラッグ開始
+
 			// プライベートモード対応：初期化フラグと監視機能
 			this.initialized = false;
 			this.resizeObserver = null;
@@ -435,20 +440,57 @@
 
 			if (this.isSilhouetteClicked(touchX, touchY)) {
 				e.preventDefault(); // スクロールを防止
-				this.isDragging = true;
+				
+				// 長押しタイマーを開始
 				this.dragStartX = touchX;
 				this.dragStartY = touchY;
+				
+				this.longPressTimer = setTimeout(() => {
+					// 長押し成功：ドラッグ開始
+					this.isLongPressActive = true;
+					this.isDragging = true;
+					
+					// 視覚的フィードバック：シルエットを少し拡大
+					if (this.silhouetteSvgElement) {
+						$(this.silhouetteSvgElement).css({
+							'transform': 'scale(1.05)',
+							'filter': 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))',
+							'transition': 'transform 0.2s ease, filter 0.2s ease'
+						});
+					}
+					
+					console.log('長押しドラッグ開始');
+				}, this.longPressDelay);
 			}
 		}
 
 		onTouchMove(e) {
-			if (!this.isDragging) return;
-			e.preventDefault();
+			if (!this.silhouetteSvgElement) return;
 
 			const touch = e.touches[0];
 			const rect = this.$canvas[0].getBoundingClientRect();
 			const touchX = touch.clientX - rect.left;
 			const touchY = touch.clientY - rect.top;
+
+			// 長押し前に動かそうとした場合、タイマーをキャンセル
+			if (this.longPressTimer && !this.isLongPressActive) {
+				const moveDistance = Math.sqrt(
+					Math.pow(touchX - this.dragStartX, 2) + 
+					Math.pow(touchY - this.dragStartY, 2)
+				);
+				
+				// 10px以上動いたらタイマーキャンセル（誤タッチ防止）
+				if (moveDistance > 10) {
+					clearTimeout(this.longPressTimer);
+					this.longPressTimer = null;
+					return;
+				}
+			}
+
+			// 長押し後のみドラッグを許可
+			if (!this.isDragging || !this.isLongPressActive) return;
+			
+			e.preventDefault();
 
 			const deltaX = touchX - this.dragStartX;
 			const deltaY = touchY - this.dragStartY;
@@ -463,8 +505,26 @@
 		}
 
 		onTouchEnd() {
-			if (this.isDragging) {
+			// タイマーをクリア
+			if (this.longPressTimer) {
+				clearTimeout(this.longPressTimer);
+				this.longPressTimer = null;
+			}
+
+			// 長押し状態をリセット
+			if (this.isLongPressActive) {
+				this.isLongPressActive = false;
 				this.isDragging = false;
+				
+				// 視覚的フィードバックを解除
+				if (this.silhouetteSvgElement) {
+					$(this.silhouetteSvgElement).css({
+						'transform': 'scale(1)',
+						'filter': 'none'
+					});
+				}
+				
+				console.log('長押しドラッグ終了');
 			}
 		}
 
