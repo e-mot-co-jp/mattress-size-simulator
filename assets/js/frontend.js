@@ -73,6 +73,8 @@
 			this.longPressTimer = null;
 			this.isLongPressActive = false;
 			this.longPressDelay = 500; // 500ms長押しでドラッグ開始
+			this.backToTopSuppressed = false;
+			this.backToTopOriginalPointerEvents = '';
 
 			// プライベートモード対応：初期化フラグと監視機能
 			this.initialized = false;
@@ -198,6 +200,7 @@
 			}
 			document.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
 			document.addEventListener('touchend', () => this.onTouchEnd(), { passive: false });
+			document.addEventListener('touchcancel', () => this.onTouchEnd(), { passive: false });
 
 			// Handle window resize
 			$(window).on('resize', () => this.onWindowResize());
@@ -441,6 +444,8 @@
 			const touchY = touch.clientY - rect.top;
 
 			if (this.isSilhouetteClicked(touchX, touchY)) {
+				this.suppressBackToTopTouch();
+
 				// 長押しタイマー中のタッチ位置を記録
 				this.initialTouchX = touchX;
 				this.initialTouchY = touchY;
@@ -486,6 +491,7 @@
 				if (moveDistance > 10) {
 					clearTimeout(this.longPressTimer);
 					this.longPressTimer = null;
+					this.restoreBackToTopTouch();
 				}
 				// 長押し確定前はスクロールを許可（preventDefaultしない）
 				return;
@@ -516,21 +522,44 @@
 				this.longPressTimer = null;
 			}
 
-			// 長押し状態をリセット
-			if (this.isLongPressActive) {
-				this.isLongPressActive = false;
-				this.isDragging = false;
-				
-				// 視覚的フィードバックを解除
-				if (this.silhouetteSvgElement) {
-					$(this.silhouetteSvgElement).css({
-						'transform': 'scale(1)',
-						'filter': 'none'
-					});
-				}
-				
-				console.log('長押しドラッグ終了');
+			this.isLongPressActive = false;
+			this.isDragging = false;
+
+			// 視覚的フィードバックを解除
+			if (this.silhouetteSvgElement) {
+				$(this.silhouetteSvgElement).css({
+					'transform': 'scale(1)',
+					'filter': 'none'
+				});
 			}
+
+			this.restoreBackToTopTouch();
+		}
+
+		suppressBackToTopTouch() {
+			if (this.backToTopSuppressed) return;
+
+			const backToTopElement = document.getElementById('backToTop');
+			if (!backToTopElement) return;
+
+			this.backToTopOriginalPointerEvents = backToTopElement.style.pointerEvents || '';
+			backToTopElement.style.pointerEvents = 'none';
+			this.backToTopSuppressed = true;
+		}
+
+		restoreBackToTopTouch() {
+			if (!this.backToTopSuppressed) return;
+
+			const backToTopElement = document.getElementById('backToTop');
+			if (!backToTopElement) {
+				this.backToTopSuppressed = false;
+				this.backToTopOriginalPointerEvents = '';
+				return;
+			}
+
+			backToTopElement.style.pointerEvents = this.backToTopOriginalPointerEvents;
+			this.backToTopSuppressed = false;
+			this.backToTopOriginalPointerEvents = '';
 		}
 
 		isSilhouetteClicked(x, y) {
