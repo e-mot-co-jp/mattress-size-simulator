@@ -7,12 +7,13 @@
 	class MattressSizeSimulator {
 		constructor($wrapper) {
 			this.$wrapper = $wrapper;
+			this.$canvasContainer = $wrapper.find('.mss-canvas-container');
 			this.$productSelect = $wrapper.find('#mss-product-select');
 			this.$genderSelect = $wrapper.find('#mss-gender-select');
 			this.$heightInput = $wrapper.find('#mss-height-input');
 			this.$shoulderWidthInput = $wrapper.find('#mss-shoulder-width-input');
-			this.$canvas = $wrapper.find('#mss-canvas');
 			this.$fullscreenToggle = $wrapper.find('.mss-fullscreen-toggle');
+			this.$canvas = $wrapper.find('#mss-canvas');
 
 			// SVG elements and cache
 			this.mattressSvgElement = null;
@@ -68,15 +69,8 @@
 			this.lastRenderTime = 0;
 			this.renderTimeout = null;
 			this.isFullscreen = false;
-
-			this.boundTouchStart = (e) => this.onTouchStart(e);
-			this.boundTouchMove = (e) => this.onTouchMove(e);
-			this.boundTouchEnd = () => this.onTouchEnd();
-			this.boundKeydown = (e) => {
-				if (e.key === 'Escape' && this.isFullscreen) {
-					this.toggleFullscreen(false);
-				}
-			};
+			this.boundTouchMoveHandler = (e) => this.onTouchMove(e);
+			this.boundTouchEndHandler = () => this.onTouchEnd();
 
 			// プライベートモード対応：初期化フラグと監視機能
 			this.initialized = false;
@@ -190,20 +184,23 @@
 			this.$heightInput.on('input', () => this.onHeightChange());
 			this.$shoulderWidthInput.on('input', () => this.onShoulderWidthChange());
 			this.$fullscreenToggle.on('click', () => this.toggleFullscreen());
+			$(document).on('keydown', (e) => {
+				if (this.isFullscreen && e.key === 'Escape') {
+					this.exitFullscreen();
+				}
+			});
 
 			// Bind mouse events for dragging
 			this.$canvas.on('mousedown', (e) => this.onMouseDown(e));
 			$(document).on('mousemove', (e) => this.onMouseMove(e));
 			$(document).on('mouseup', () => this.onMouseUp());
 
-			// Bind touch events for mobile (passive: false で preventDefault を有効化)
+			// Bind touch events for mobile
 			if (this.$canvas[0]) {
-				this.$canvas[0].addEventListener('touchstart', this.boundTouchStart, { passive: false });
+				this.$canvas[0].addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
 			}
-			document.addEventListener('touchmove', this.boundTouchMove, { passive: false });
-			document.addEventListener('touchend', this.boundTouchEnd, { passive: true });
-			document.addEventListener('touchcancel', this.boundTouchEnd, { passive: true });
-			document.addEventListener('keydown', this.boundKeydown);
+			document.addEventListener('touchmove', this.boundTouchMoveHandler, { passive: false });
+			document.addEventListener('touchend', this.boundTouchEndHandler, { passive: true });
 
 			// Handle window resize
 			$(window).on('resize', () => this.onWindowResize());
@@ -213,22 +210,6 @@
 
 			// Initial render
 			this.render();
-		}
-
-		toggleFullscreen(forceState = null) {
-			const nextState = forceState === null ? !this.isFullscreen : !!forceState;
-			this.isFullscreen = nextState;
-
-			this.$wrapper.toggleClass('mss-fullscreen', nextState);
-			$('body').toggleClass('mss-fullscreen-open', nextState);
-
-			if (this.$fullscreenToggle.length) {
-				this.$fullscreenToggle.text(nextState ? '通常表示に戻す' : 'フル画面表示');
-			}
-
-			setTimeout(() => {
-				this.onWindowResize();
-			}, 50);
 		}
 
 		autoSelectProductByTitle() {
@@ -341,6 +322,36 @@
 			// Recalculate base scale on resize
 			this.calculateBaseScale();
 			this.render();
+		}
+
+		toggleFullscreen() {
+			if (this.isFullscreen) {
+				this.exitFullscreen();
+			} else {
+				this.enterFullscreen();
+			}
+		}
+
+		enterFullscreen() {
+			this.isFullscreen = true;
+			this.$wrapper.addClass('mss-fullscreen');
+			$('body').addClass('mss-fullscreen-active');
+			this.$fullscreenToggle.text('全画面を閉じる');
+
+			setTimeout(() => {
+				this.onWindowResize();
+			}, 50);
+		}
+
+		exitFullscreen() {
+			this.isFullscreen = false;
+			this.$wrapper.removeClass('mss-fullscreen');
+			$('body').removeClass('mss-fullscreen-active');
+			this.$fullscreenToggle.text('全画面表示');
+
+			setTimeout(() => {
+				this.onWindowResize();
+			}, 50);
 		}
 
 		calculateBaseScale() {
@@ -466,6 +477,7 @@
 				if (e.cancelable) {
 					e.preventDefault();
 				}
+				e.stopPropagation();
 				this.isDragging = true;
 				this.dragStartX = touchX;
 				this.dragStartY = touchY;
@@ -477,6 +489,7 @@
 			if (e.cancelable) {
 				e.preventDefault();
 			}
+			e.stopPropagation();
 
 			const touch = e.touches[0];
 			const rect = this.$canvas[0].getBoundingClientRect();
