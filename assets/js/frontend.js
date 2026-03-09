@@ -197,10 +197,22 @@
 			const canvasElement = this.$canvas[0];
 			if (canvasElement) {
 				canvasElement.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
+				canvasElement.addEventListener('contextmenu', (e) => e.preventDefault(), { passive: false });
+				canvasElement.addEventListener('dragstart', (e) => e.preventDefault(), { passive: false });
+				canvasElement.style.webkitTouchCallout = 'none';
+				canvasElement.style.webkitUserSelect = 'none';
+				canvasElement.style.userSelect = 'none';
 			}
 			document.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
 			document.addEventListener('touchend', () => this.onTouchEnd(), { passive: false });
 			document.addEventListener('touchcancel', () => this.onTouchEnd(), { passive: false });
+			document.addEventListener('contextmenu', (e) => {
+				if (!this.$canvas || !this.$canvas[0]) return;
+				const isOnCanvas = this.$canvas[0].contains(e.target);
+				if (isOnCanvas && (this.longPressTimer || this.isLongPressActive || this.isDragging)) {
+					e.preventDefault();
+				}
+			}, { passive: false });
 
 			// Handle window resize
 			$(window).on('resize', () => this.onWindowResize());
@@ -821,7 +833,12 @@
 				top: y + 'px',
 				width: width + 'px',
 				height: height + 'px',
-				overflow: 'visible'
+				overflow: 'visible',
+				touchAction: 'none',
+				webkitTouchCallout: 'none',
+				webkitUserSelect: 'none',
+				userSelect: 'none',
+				webkitUserDrag: 'none'
 			});
 
 			// Set preserveAspectRatio based on type
@@ -945,7 +962,12 @@
 				position: 'absolute',
 				left: x + 'px',
 				top: y + 'px',
-				cursor: 'grab'
+				cursor: 'grab',
+				touchAction: 'none',
+				webkitTouchCallout: 'none',
+				webkitUserSelect: 'none',
+				userSelect: 'none',
+				webkitUserDrag: 'none'
 			}).attr('data-type', 'silhouette');
 
 			this.silhouetteSvgElement = $svg[0];

@@ -3,7 +3,7 @@
  * Plugin Name: Mattress Size Simulator
  * Plugin URI: https://e-mot.co.jp
  * Description: Elementor widget for mattress size simulation with sleeper silhouette overlay
- * Version: 1.0.11
+ * Version: 1.0.12
  * Author: e-mot.co.jp
  * Author URI: https://e-mot.co.jp
  * Text Domain: mattress-size-simulator
@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Define constants
  */
-define( 'MATTRESS_SIZE_SIMULATOR_VERSION', '1.0.11' );
+define( 'MATTRESS_SIZE_SIMULATOR_VERSION', '1.0.12' );
 define( 'MATTRESS_SIZE_SIMULATOR_PATH', plugin_dir_path( __FILE__ ) );
 define( 'MATTRESS_SIZE_SIMULATOR_URL', plugin_dir_url( __FILE__ ) );
 
