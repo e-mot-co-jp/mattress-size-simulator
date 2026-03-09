@@ -452,13 +452,10 @@
 			const deltaX = mouseX - this.dragStartX;
 			const deltaY = mouseY - this.dragStartY;
 
-			this.silhouetteOffsetX += deltaX;
-			this.silhouetteOffsetY += deltaY;
+			this.moveSilhouetteByDelta(deltaX, deltaY);
 
 			this.dragStartX = mouseX;
 			this.dragStartY = mouseY;
-
-			this.render();
 		}
 
 		onMouseUp() {
@@ -515,13 +512,10 @@
 			const deltaX = touchX - this.dragStartX;
 			const deltaY = touchY - this.dragStartY;
 
-			this.silhouetteOffsetX += deltaX;
-			this.silhouetteOffsetY += deltaY;
+			this.moveSilhouetteByDelta(deltaX, deltaY);
 
 			this.dragStartX = touchX;
 			this.dragStartY = touchY;
-
-			this.debounceRender();
 		}
 
 		onTouchEnd(e) {
@@ -559,6 +553,24 @@
 			}
 
 			return null;
+		}
+
+		moveSilhouetteByDelta(deltaX, deltaY) {
+			if (!this.silhouetteSvgElement) {
+				return;
+			}
+
+			const currentLeft = parseFloat(this.silhouetteSvgElement.style.left) || 0;
+			const currentTop = parseFloat(this.silhouetteSvgElement.style.top) || 0;
+
+			const nextLeft = currentLeft + deltaX;
+			const nextTop = currentTop + deltaY;
+
+			this.silhouetteSvgElement.style.left = `${nextLeft}px`;
+			this.silhouetteSvgElement.style.top = `${nextTop}px`;
+
+			this.silhouetteOffsetX += deltaX;
+			this.silhouetteOffsetY += deltaY;
 		}
 
 		isSilhouetteClicked(x, y) {
