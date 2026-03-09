@@ -69,8 +69,10 @@
 			this.lastRenderTime = 0;
 			this.renderTimeout = null;
 			this.isFullscreen = false;
+			this.activeTouchId = null;
 			this.boundTouchMoveHandler = (e) => this.onTouchMove(e);
-			this.boundTouchEndHandler = () => this.onTouchEnd();
+			this.boundTouchEndHandler = (e) => this.onTouchEnd(e);
+			this.boundTouchCancelHandler = () => this.onTouchCancel();
 
 			// プライベートモード対応：初期化フラグと監視機能
 			this.initialized = false;
@@ -201,6 +203,7 @@
 			}
 			document.addEventListener('touchmove', this.boundTouchMoveHandler, { passive: false });
 			document.addEventListener('touchend', this.boundTouchEndHandler, { passive: true });
+			document.addEventListener('touchcancel', this.boundTouchCancelHandler, { passive: true });
 
 			// Handle window resize
 			$(window).on('resize', () => this.onWindowResize());
@@ -468,6 +471,10 @@
 		onTouchStart(e) {
 			if (!this.silhouetteSvgElement) return;
 
+			if (this.isFullscreen && e.cancelable) {
+				e.preventDefault();
+			}
+
 			const touch = e.touches[0];
 			const rect = this.$canvas[0].getBoundingClientRect();
 			const touchX = touch.clientX - rect.left;
@@ -479,19 +486,28 @@
 				}
 				e.stopPropagation();
 				this.isDragging = true;
+				this.activeTouchId = touch.identifier;
 				this.dragStartX = touchX;
 				this.dragStartY = touchY;
+			} else {
+				this.isDragging = false;
+				this.activeTouchId = null;
 			}
 		}
 
 		onTouchMove(e) {
 			if (!this.isDragging) return;
+
+			const touch = this.findActiveTouch(e.touches);
+			if (!touch) {
+				return;
+			}
+
 			if (e.cancelable) {
 				e.preventDefault();
 			}
 			e.stopPropagation();
 
-			const touch = e.touches[0];
 			const rect = this.$canvas[0].getBoundingClientRect();
 			const touchX = touch.clientX - rect.left;
 			const touchY = touch.clientY - rect.top;
@@ -505,13 +521,44 @@
 			this.dragStartX = touchX;
 			this.dragStartY = touchY;
 
-			this.render();
+			this.debounceRender();
 		}
 
-		onTouchEnd() {
-			if (this.isDragging) {
+		onTouchEnd(e) {
+			if (!this.isDragging) return;
+
+			if (this.activeTouchId === null) {
 				this.isDragging = false;
+				return;
 			}
+
+			const changedTouches = e && e.changedTouches ? e.changedTouches : [];
+			for (let index = 0; index < changedTouches.length; index++) {
+				if (changedTouches[index].identifier === this.activeTouchId) {
+					this.isDragging = false;
+					this.activeTouchId = null;
+					return;
+				}
+			}
+		}
+
+		onTouchCancel() {
+			this.isDragging = false;
+			this.activeTouchId = null;
+		}
+
+		findActiveTouch(touchList) {
+			if (!touchList || this.activeTouchId === null) {
+				return null;
+			}
+
+			for (let index = 0; index < touchList.length; index++) {
+				if (touchList[index].identifier === this.activeTouchId) {
+					return touchList[index];
+				}
+			}
+
+			return null;
 		}
 
 		isSilhouetteClicked(x, y) {
