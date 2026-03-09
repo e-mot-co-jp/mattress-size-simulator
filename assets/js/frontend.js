@@ -184,10 +184,13 @@
 			$(document).on('mousemove', (e) => this.onMouseMove(e));
 			$(document).on('mouseup', () => this.onMouseUp());
 
-			// Bind touch events for mobile
-			this.$canvas.on('touchstart', (e) => this.onTouchStart(e));
-			$(document).on('touchmove', (e) => this.onTouchMove(e));
-			$(document).on('touchend', () => this.onTouchEnd());
+			// Bind touch events for mobile (use native addEventListener with passive: false)
+			const canvasElement = this.$canvas[0];
+			if (canvasElement) {
+				canvasElement.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
+			}
+			document.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
+			document.addEventListener('touchend', () => this.onTouchEnd(), { passive: false });
 
 			// Handle window resize
 			$(window).on('resize', () => this.onWindowResize());
@@ -431,6 +434,7 @@
 			const touchY = touch.clientY - rect.top;
 
 			if (this.isSilhouetteClicked(touchX, touchY)) {
+				e.preventDefault(); // スクロールを防止
 				this.isDragging = true;
 				this.dragStartX = touchX;
 				this.dragStartY = touchY;
