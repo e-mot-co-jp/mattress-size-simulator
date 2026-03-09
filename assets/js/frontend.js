@@ -12,6 +12,7 @@
 			this.$heightInput = $wrapper.find('#mss-height-input');
 			this.$shoulderWidthInput = $wrapper.find('#mss-shoulder-width-input');
 			this.$canvas = $wrapper.find('#mss-canvas');
+			this.$fullscreenToggle = $wrapper.find('.mss-fullscreen-toggle');
 
 			// SVG elements and cache
 			this.mattressSvgElement = null;
@@ -64,17 +65,18 @@
 			this.isDragging = false;
 			this.dragStartX = 0;
 			this.dragStartY = 0;
-			this.initialTouchX = 0; // 長押し判定用の初期タッチ位置
-			this.initialTouchY = 0;
 			this.lastRenderTime = 0;
 			this.renderTimeout = null;
+			this.isFullscreen = false;
 
-			// 長押しドラッグ用
-			this.longPressTimer = null;
-			this.isLongPressActive = false;
-			this.longPressDelay = 500; // 500ms長押しでドラッグ開始
-			this.backToTopSuppressed = false;
-			this.backToTopOriginalPointerEvents = '';
+			this.boundTouchStart = (e) => this.onTouchStart(e);
+			this.boundTouchMove = (e) => this.onTouchMove(e);
+			this.boundTouchEnd = () => this.onTouchEnd();
+			this.boundKeydown = (e) => {
+				if (e.key === 'Escape' && this.isFullscreen) {
+					this.toggleFullscreen(false);
+				}
+			};
 
 			// プライベートモード対応：初期化フラグと監視機能
 			this.initialized = false;
@@ -187,32 +189,21 @@
 			this.$genderSelect.on('change', () => this.onGenderChange());
 			this.$heightInput.on('input', () => this.onHeightChange());
 			this.$shoulderWidthInput.on('input', () => this.onShoulderWidthChange());
+			this.$fullscreenToggle.on('click', () => this.toggleFullscreen());
 
 			// Bind mouse events for dragging
 			this.$canvas.on('mousedown', (e) => this.onMouseDown(e));
 			$(document).on('mousemove', (e) => this.onMouseMove(e));
 			$(document).on('mouseup', () => this.onMouseUp());
 
-			// Bind touch events for mobile (use native addEventListener with passive: false)
-			const canvasElement = this.$canvas[0];
-			if (canvasElement) {
-				canvasElement.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
-				canvasElement.addEventListener('contextmenu', (e) => e.preventDefault(), { passive: false });
-				canvasElement.addEventListener('dragstart', (e) => e.preventDefault(), { passive: false });
-				canvasElement.style.webkitTouchCallout = 'none';
-				canvasElement.style.webkitUserSelect = 'none';
-				canvasElement.style.userSelect = 'none';
+			// Bind touch events for mobile (passive: false で preventDefault を有効化)
+			if (this.$canvas[0]) {
+				this.$canvas[0].addEventListener('touchstart', this.boundTouchStart, { passive: false });
 			}
-			document.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
-			document.addEventListener('touchend', () => this.onTouchEnd(), { passive: false });
-			document.addEventListener('touchcancel', () => this.onTouchEnd(), { passive: false });
-			document.addEventListener('contextmenu', (e) => {
-				if (!this.$canvas || !this.$canvas[0]) return;
-				const isOnCanvas = this.$canvas[0].contains(e.target);
-				if (isOnCanvas && (this.longPressTimer || this.isLongPressActive || this.isDragging)) {
-					e.preventDefault();
-				}
-			}, { passive: false });
+			document.addEventListener('touchmove', this.boundTouchMove, { passive: false });
+			document.addEventListener('touchend', this.boundTouchEnd, { passive: true });
+			document.addEventListener('touchcancel', this.boundTouchEnd, { passive: true });
+			document.addEventListener('keydown', this.boundKeydown);
 
 			// Handle window resize
 			$(window).on('resize', () => this.onWindowResize());
@@ -222,6 +213,22 @@
 
 			// Initial render
 			this.render();
+		}
+
+		toggleFullscreen(forceState = null) {
+			const nextState = forceState === null ? !this.isFullscreen : !!forceState;
+			this.isFullscreen = nextState;
+
+			this.$wrapper.toggleClass('mss-fullscreen', nextState);
+			$('body').toggleClass('mss-fullscreen-open', nextState);
+
+			if (this.$fullscreenToggle.length) {
+				this.$fullscreenToggle.text(nextState ? '通常表示に戻す' : 'フル画面表示');
+			}
+
+			setTimeout(() => {
+				this.onWindowResize();
+			}, 50);
 		}
 
 		autoSelectProductByTitle() {
@@ -456,64 +463,25 @@
 			const touchY = touch.clientY - rect.top;
 
 			if (this.isSilhouetteClicked(touchX, touchY)) {
-				this.suppressBackToTopTouch();
-
-				// 長押しタイマー中のタッチ位置を記録
-				this.initialTouchX = touchX;
-				this.initialTouchY = touchY;
+				if (e.cancelable) {
+					e.preventDefault();
+				}
+				this.isDragging = true;
 				this.dragStartX = touchX;
 				this.dragStartY = touchY;
-				
-				// 長押しタイマーを開始（preventDefaultはonTouchMoveで行う）
-				this.longPressTimer = setTimeout(() => {
-					// 長押し成功：ドラッグ開始準備完了
-					this.isLongPressActive = true;
-					this.isDragging = true;
-					
-					// 視覚的フィードバック：シルエットを少し拡大
-					if (this.silhouetteSvgElement) {
-						$(this.silhouetteSvgElement).css({
-							'transform': 'scale(1.05)',
-							'filter': 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))',
-							'transition': 'transform 0.2s ease, filter 0.2s ease'
-						});
-					}
-					
-					console.log('長押しドラッグ開始');
-				}, this.longPressDelay);
 			}
 		}
 
 		onTouchMove(e) {
-			if (!this.silhouetteSvgElement) return;
+			if (!this.isDragging) return;
+			if (e.cancelable) {
+				e.preventDefault();
+			}
 
 			const touch = e.touches[0];
 			const rect = this.$canvas[0].getBoundingClientRect();
 			const touchX = touch.clientX - rect.left;
 			const touchY = touch.clientY - rect.top;
-
-			// 長押し前：移動距離をチェック
-			if (this.longPressTimer && !this.isLongPressActive) {
-				const moveDistance = Math.sqrt(
-					Math.pow(touchX - this.initialTouchX, 2) + 
-					Math.pow(touchY - this.initialTouchY, 2)
-				);
-				
-				// 10px以上動いたらタイマーキャンセル
-				if (moveDistance > 10) {
-					clearTimeout(this.longPressTimer);
-					this.longPressTimer = null;
-					this.restoreBackToTopTouch();
-				}
-				// 長押し確定前はスクロールを許可（preventDefaultしない）
-				return;
-			}
-
-			// 長押し後のみドラッグを許可
-			if (!this.isDragging || !this.isLongPressActive) return;
-			
-			// ドラッグ中はスクロールを防止
-			e.preventDefault();
 
 			const deltaX = touchX - this.dragStartX;
 			const deltaY = touchY - this.dragStartY;
@@ -528,50 +496,9 @@
 		}
 
 		onTouchEnd() {
-			// タイマーをクリア
-			if (this.longPressTimer) {
-				clearTimeout(this.longPressTimer);
-				this.longPressTimer = null;
+			if (this.isDragging) {
+				this.isDragging = false;
 			}
-
-			this.isLongPressActive = false;
-			this.isDragging = false;
-
-			// 視覚的フィードバックを解除
-			if (this.silhouetteSvgElement) {
-				$(this.silhouetteSvgElement).css({
-					'transform': 'scale(1)',
-					'filter': 'none'
-				});
-			}
-
-			this.restoreBackToTopTouch();
-		}
-
-		suppressBackToTopTouch() {
-			if (this.backToTopSuppressed) return;
-
-			const backToTopElement = document.getElementById('backToTop');
-			if (!backToTopElement) return;
-
-			this.backToTopOriginalPointerEvents = backToTopElement.style.pointerEvents || '';
-			backToTopElement.style.pointerEvents = 'none';
-			this.backToTopSuppressed = true;
-		}
-
-		restoreBackToTopTouch() {
-			if (!this.backToTopSuppressed) return;
-
-			const backToTopElement = document.getElementById('backToTop');
-			if (!backToTopElement) {
-				this.backToTopSuppressed = false;
-				this.backToTopOriginalPointerEvents = '';
-				return;
-			}
-
-			backToTopElement.style.pointerEvents = this.backToTopOriginalPointerEvents;
-			this.backToTopSuppressed = false;
-			this.backToTopOriginalPointerEvents = '';
 		}
 
 		isSilhouetteClicked(x, y) {
@@ -833,12 +760,7 @@
 				top: y + 'px',
 				width: width + 'px',
 				height: height + 'px',
-				overflow: 'visible',
-				touchAction: 'none',
-				webkitTouchCallout: 'none',
-				webkitUserSelect: 'none',
-				userSelect: 'none',
-				webkitUserDrag: 'none'
+				overflow: 'visible'
 			});
 
 			// Set preserveAspectRatio based on type
@@ -962,12 +884,7 @@
 				position: 'absolute',
 				left: x + 'px',
 				top: y + 'px',
-				cursor: 'grab',
-				touchAction: 'none',
-				webkitTouchCallout: 'none',
-				webkitUserSelect: 'none',
-				userSelect: 'none',
-				webkitUserDrag: 'none'
+				cursor: 'grab'
 			}).attr('data-type', 'silhouette');
 
 			this.silhouetteSvgElement = $svg[0];

@@ -44,6 +44,12 @@
 	font-family: inherit;
 }
 
+.mss-fullscreen-toggle {
+	cursor: pointer;
+	font-weight: 600;
+	text-align: center;
+}
+
 .mss-input:focus,
 .mss-select:focus {
 	outline: none;
@@ -90,6 +96,7 @@
 	background-size: 40px 40px;
 	background-position: 0 0, 20px 20px;
 	background-color: #fafafa;
+	touch-action: none;
 }
 
 .mss-canvas svg {
@@ -118,6 +125,30 @@
 	cursor: grab;
 	touch-action: none;
 	-webkit-touch-callout: none;
+}
+
+body.mss-fullscreen-open {
+	overflow: hidden;
+}
+
+.mss-wrapper.mss-fullscreen {
+	position: fixed;
+	inset: 0;
+	z-index: 2147483000;
+	max-width: none !important;
+	margin: 0 !important;
+	padding: 12px;
+	background: #fff;
+	overflow: auto;
+}
+
+.mss-wrapper.mss-fullscreen .mss-canvas-container {
+	margin-bottom: 12px;
+}
+
+.mss-wrapper.mss-fullscreen .mss-canvas {
+	height: calc(100vh - 280px);
+	min-height: 420px;
 }
 
 .mss-canvas svg[data-type="silhouette"]:active {
@@ -158,6 +189,15 @@
 
 	.mss-wrapper {
 		margin: 15px 0;
+	}
+
+	.mss-wrapper.mss-fullscreen {
+		padding: 8px;
+	}
+
+	.mss-wrapper.mss-fullscreen .mss-canvas {
+		height: calc(100vh - 330px);
+		min-height: 320px;
 	}
 }
 

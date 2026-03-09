@@ -443,6 +443,15 @@ class Mattress_Simulator_Widget extends Widget_Base {
 					</label>
 					<input type="number" id="mss-shoulder-width-input" class="mss-input" min="30" max="60" value="40" step="1">
 				</div>
+
+				<div class="mss-control-group">
+					<label class="mss-label" for="mss-fullscreen-toggle">
+						<?php esc_html_e( '表示モード', 'mattress-size-simulator' ); ?>
+					</label>
+					<button type="button" id="mss-fullscreen-toggle" class="mss-input mss-fullscreen-toggle">
+						<?php esc_html_e( 'フル画面表示', 'mattress-size-simulator' ); ?>
+					</button>
+				</div>
 			</div>
 
 			<!-- Canvas -->
